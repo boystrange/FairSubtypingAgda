@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Main</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Comment">-- MIT License</a>
+
+<a id="17" class="Comment">-- Copyright (c) 2021 Luca Ciccone and Luca Padovani</a>
+
+<a id="71" class="Comment">-- Permission is hereby granted, free of charge, to any person</a>
+<a id="134" class="Comment">-- obtaining a copy of this software and associated documentation</a>
+<a id="200" class="Comment">-- files (the &quot;Software&quot;), to deal in the Software without</a>
+<a id="259" class="Comment">-- restriction, including without limitation the rights to use,</a>
+<a id="323" class="Comment">-- copy, modify, merge, publish, distribute, sublicense, and/or sell</a>
+<a id="392" class="Comment">-- copies of the Software, and to permit persons to whom the</a>
+<a id="453" class="Comment">-- Software is furnished to do so, subject to the following</a>
+<a id="513" class="Comment">-- conditions:</a>
+
+<a id="529" class="Comment">-- The above copyright notice and this permission notice shall be</a>
+<a id="595" class="Comment">-- included in all copies or substantial portions of the Software.</a>
+
+<a id="663" class="Comment">-- THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,</a>
+<a id="730" class="Comment">-- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES</a>
+<a id="797" class="Comment">-- OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND</a>
+<a id="857" class="Comment">-- NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT</a>
+<a id="920" class="Comment">-- HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,</a>
+<a id="984" class="Comment">-- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING</a>
+<a id="1048" class="Comment">-- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR</a>
+<a id="1113" class="Comment">-- OTHER DEALINGS IN THE SOFTWARE.</a>
+
+<a id="1149" class="Keyword">module</a> <a id="1156" href="Main.html" class="Module">Main</a> <a id="1161" class="Keyword">where</a>
+
+<a id="1168" class="Keyword">import</a> <a id="1175" href="Trace.html" class="Module">Trace</a>
+<a id="1181" class="Keyword">import</a> <a id="1188" href="SessionType.html" class="Module">SessionType</a>
+<a id="1200" class="Keyword">import</a> <a id="1207" href="Semantics.html" class="Module">Semantics</a>
+<a id="1217" class="Keyword">import</a> <a id="1224" href="Session.html" class="Module">Session</a>
+<a id="1232" class="Keyword">import</a> <a id="1239" href="Progress.html" class="Module">Progress</a>
+<a id="1248" class="Keyword">import</a> <a id="1255" href="Compliance.html" class="Module">Compliance</a>
+<a id="1266" class="Keyword">import</a> <a id="1273" href="FairCompliance.html" class="Module">FairCompliance</a>
+<a id="1288" class="Keyword">import</a> <a id="1295" href="FairSubtyping.html" class="Module">FairSubtyping</a>
+<a id="1309" class="Keyword">import</a> <a id="1316" href="Subtyping.html" class="Module">Subtyping</a>
+<a id="1326" class="Keyword">import</a> <a id="1333" href="TraceInclusion.html" class="Module">TraceInclusion</a>
+<a id="1348" class="Keyword">import</a> <a id="1355" href="Convergence.html" class="Module">Convergence</a>
+<a id="1367" class="Keyword">import</a> <a id="1374" href="Divergence.html" class="Module">Divergence</a>
+<a id="1385" class="Keyword">import</a> <a id="1392" href="Discriminator.html" class="Module">Discriminator</a>
+<a id="1406" class="Keyword">import</a> <a id="1413" href="WeakTermination-IS.html" class="Module">WeakTermination-IS</a>
+<a id="1432" class="Keyword">import</a> <a id="1439" href="FairCompliance-IS.html" class="Module">FairCompliance-IS</a>
+<a id="1457" class="Keyword">import</a> <a id="1464" href="FairSubtyping-IS.html" class="Module">FairSubtyping-IS</a>
+
+</pre></body></html>

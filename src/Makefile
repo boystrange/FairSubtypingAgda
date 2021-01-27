@@ -2,6 +2,9 @@
 all:
 	agda -v 2 Main.agda
 
+docs:
+	agda --html --html-dir=../docs Main.agda
+
 diff:
 	for i in *.agda; do diff $$i ../Mono/$$i; done
 

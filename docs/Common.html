@@ -1,0 +1,45 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Common</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Comment">-- MIT License</a>
+
+<a id="17" class="Comment">-- Copyright (c) 2021 Luca Ciccone and Luca Padovani</a>
+
+<a id="71" class="Comment">-- Permission is hereby granted, free of charge, to any person</a>
+<a id="134" class="Comment">-- obtaining a copy of this software and associated documentation</a>
+<a id="200" class="Comment">-- files (the &quot;Software&quot;), to deal in the Software without</a>
+<a id="259" class="Comment">-- restriction, including without limitation the rights to use,</a>
+<a id="323" class="Comment">-- copy, modify, merge, publish, distribute, sublicense, and/or sell</a>
+<a id="392" class="Comment">-- copies of the Software, and to permit persons to whom the</a>
+<a id="453" class="Comment">-- Software is furnished to do so, subject to the following</a>
+<a id="513" class="Comment">-- conditions:</a>
+
+<a id="529" class="Comment">-- The above copyright notice and this permission notice shall be</a>
+<a id="595" class="Comment">-- included in all copies or substantial portions of the Software.</a>
+
+<a id="663" class="Comment">-- THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,</a>
+<a id="730" class="Comment">-- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES</a>
+<a id="797" class="Comment">-- OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND</a>
+<a id="857" class="Comment">-- NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT</a>
+<a id="920" class="Comment">-- HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,</a>
+<a id="984" class="Comment">-- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING</a>
+<a id="1048" class="Comment">-- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR</a>
+<a id="1113" class="Comment">-- OTHER DEALINGS IN THE SOFTWARE.</a>
+
+<a id="1149" class="Keyword">open</a> <a id="1154" class="Keyword">import</a> <a id="1161" href="Level.html" class="Module">Level</a>
+
+<a id="1168" class="Keyword">open</a> <a id="1173" class="Keyword">import</a> <a id="1180" href="Axiom.ExcludedMiddle.html" class="Module">Axiom.ExcludedMiddle</a>
+<a id="1201" class="Keyword">open</a> <a id="1206" class="Keyword">import</a> <a id="1213" href="Axiom.Extensionality.Propositional.html" class="Module">Axiom.Extensionality.Propositional</a>
+
+<a id="1249" class="Keyword">open</a> <a id="1254" class="Keyword">import</a> <a id="1261" href="Relation.Nullary.html" class="Module">Relation.Nullary</a>
+<a id="1278" class="Keyword">open</a> <a id="1283" class="Keyword">import</a> <a id="1290" href="Relation.Binary.PropositionalEquality.html" class="Module">Relation.Binary.PropositionalEquality</a> <a id="1328" class="Keyword">using</a> <a id="1334" class="Symbol">(</a><a id="1335" href="Agda.Builtin.Equality.html#151" class="Datatype Operator">_≡_</a><a id="1338" class="Symbol">;</a> <a id="1340" href="Agda.Builtin.Equality.html#208" class="InductiveConstructor">refl</a><a id="1344" class="Symbol">)</a>
+
+<a id="1347" class="Keyword">module</a> <a id="1354" href="Common.html" class="Module">Common</a> <a id="1361" class="Keyword">where</a>
+
+<a id="1368" class="Keyword">postulate</a>
+  <a id="excluded-middle"></a><a id="1380" href="Common.html#1380" class="Postulate">excluded-middle</a> <a id="1396" class="Symbol">:</a> <a id="1398" href="Axiom.ExcludedMiddle.html#572" class="Function">ExcludedMiddle</a> <a id="1413" href="Agda.Primitive.html#590" class="Primitive">Level.zero</a>
+  <a id="extensionality"></a><a id="1426" href="Common.html#1426" class="Postulate">extensionality</a> <a id="1441" class="Symbol">:</a> <a id="1443" href="Axiom.Extensionality.Propositional.html#741" class="Function">Extensionality</a> <a id="1458" href="Agda.Primitive.html#590" class="Primitive">Level.zero</a> <a id="1469" class="Symbol">(</a><a id="1470" href="Agda.Primitive.html#606" class="Primitive">Level.suc</a> <a id="1480" href="Agda.Primitive.html#590" class="Primitive">Level.zero</a><a id="1490" class="Symbol">)</a>
+
+<a id="1493" class="Keyword">record</a> <a id="Message"></a><a id="1500" href="Common.html#1500" class="Record">Message</a> <a id="1508" class="Symbol">(</a><a id="1509" href="Common.html#1509" class="Bound">ℙ</a> <a id="1511" class="Symbol">:</a> <a id="1513" class="PrimitiveType">Set</a><a id="1516" class="Symbol">)</a> <a id="1518" class="Symbol">:</a> <a id="1520" class="PrimitiveType">Set</a> <a id="1524" class="Keyword">where</a>
+  <a id="1532" class="Keyword">infix</a> <a id="1538" class="Number">4</a> <a id="1540" href="Common.html#1557" class="Field Operator">_?=_</a>
+  <a id="1547" class="Keyword">field</a>
+    <a id="Message._?=_"></a><a id="1557" href="Common.html#1557" class="Field Operator">_?=_</a> <a id="1562" class="Symbol">:</a> <a id="1564" class="Symbol">(</a><a id="1565" href="Common.html#1565" class="Bound">x</a> <a id="1567" href="Common.html#1567" class="Bound">y</a> <a id="1569" class="Symbol">:</a> <a id="1571" href="Common.html#1509" class="Bound">ℙ</a><a id="1572" class="Symbol">)</a> <a id="1574" class="Symbol">-&gt;</a> <a id="1577" href="Relation.Nullary.html#1508" class="Record">Dec</a> <a id="1581" class="Symbol">(</a><a id="1582" href="Common.html#1565" class="Bound">x</a> <a id="1584" href="Agda.Builtin.Equality.html#151" class="Datatype Operator">≡</a> <a id="1586" href="Common.html#1567" class="Bound">y</a><a id="1587" class="Symbol">)</a>
+</pre></body></html>
