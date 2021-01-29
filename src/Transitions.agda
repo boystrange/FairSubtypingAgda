@@ -23,6 +23,7 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+open import Data.Empty
 open import Data.Product
 open import Data.List using ([]; _∷_; _∷ʳ_)
 
@@ -73,3 +74,6 @@ transitions-eq (step inp tr) (step inp sr) with transitions-eq tr sr
 ... | refl , Het.refl = refl , Het.refl
 transitions-eq (step (out fx) tr) (step (out gx) sr) with Defined-eq fx gx | transitions-eq tr sr
 ... | refl | refl , Het.refl = refl , Het.refl
+
+win-reduces-⊥ : ∀{S S' α} → Win S → Transition S α S' → ⊥
+win-reduces-⊥ (out e) (out !x) = e _ !x

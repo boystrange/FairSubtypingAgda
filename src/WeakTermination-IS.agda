@@ -37,15 +37,7 @@ open import Relation.Unary using (_∈_; _∉_; _⊆_; Satisfiable)
 open import Relation.Binary.Construct.Closure.ReflexiveTransitive using (ε; _◅_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 
-import is-meta.InfSys.Base as Base
-import is-meta.InfSys.Properties as Properties
-import is-meta.InfSys.Principles as Principles
-open Base
-open Properties
-open MetaRule
-open IS
-open Ind⟦_⟧
-open CoInd⟦_⟧
+open import is-lib.InfSys
 
 module WeakTermination-IS where
 
@@ -119,7 +111,7 @@ WeakTerminationCOIS .rules inp = inp-co-r
 WeakTerminationCOIS .rules out = out-co-r
 
 WeakTermination : SessionType -> Set
-WeakTermination = Gen⟦ WeakTerminationIS , WeakTerminationCOIS ⟧
+WeakTermination = FCoInd⟦ WeakTerminationIS , WeakTerminationCOIS ⟧
 
 WeakTerminationI : SessionType -> Set
 WeakTerminationI = Ind⟦ WeakTerminationIS ∪ WeakTerminationCOIS ⟧
@@ -164,8 +156,8 @@ may-terminate _ (fold (inj₂ out , (_ , x) , refl , fx , premise)) with may-ter
 ... | _ , cψ = _ , lemma-out cψ
 
 wt-sound : WeakTermination ⊆ WeakTerminationS
-wt-sound wt (_ , def , refl) = may-terminate def (gen-to-ind wt)
-wt-sound wt (_ , def , step t tr) with unfold wt
+wt-sound wt (_ , def , refl) = may-terminate def (fcoind-to-ind wt)
+wt-sound wt (_ , def , step t tr) with wt .CoInd⟦_⟧.unfold
 wt-sound wt (_ , def , step (inp {_} {false}) tr) | inp , C , refl , sc , premise =
   let _ , cψ = wt-sound (premise (Fin.suc Fin.zero)) (_ , def , tr) in
   _ , lemma-inp cψ
@@ -201,7 +193,7 @@ wt-consistent {out f} spec =
                          ; (Fin.suc Fin.zero) → lemma-output-complete spec}
 
 undefined->terminates : ∀{T} -> ¬ Defined T -> WeakTerminationI T
-undefined->terminates {nil}   _   = fold (inj₁ nil , _ , refl , _ , (λ ()))
+undefined->terminates {nil}   _   = apply-ind (inj₁ nil) _ λ ()
 undefined->terminates {inp f} und = ⊥-elim (und inp)
 undefined->terminates {out f} und = ⊥-elim (und out)
 
@@ -220,16 +212,14 @@ output-complete->terminates {f} {x} (complete (_ , out , refl) F) with x ∈? f
 bounded-lemma : ∀{T φ} -> φ ∈ Complete ⟦ T ⟧ -> WeakTerminationI T
 bounded-lemma {nil} (complete (_ , () , refl) _)
 bounded-lemma {inp f} c[]@(complete (_ , def , refl) F) =
-  fold (inj₁ inp , f , refl , _ , λ { Fin.zero → input-complete->terminates c[]
-                                    ; (Fin.suc Fin.zero) → input-complete->terminates c[] })
+  apply-ind (inj₁ inp) _ λ{Fin.zero → input-complete->terminates c[] ; (Fin.suc Fin.zero) → input-complete->terminates c[]}
 bounded-lemma {out f} c[]@(complete (_ , def , refl) F) =
-  fold (inj₁ out , f , refl , _ , λ { Fin.zero → output-complete->terminates c[]
-                                    ; (Fin.suc Fin.zero) → output-complete->terminates c[] })
+  apply-ind (inj₁ out) _ λ{Fin.zero → output-complete->terminates c[] ; (Fin.suc Fin.zero) → output-complete->terminates c[]}
 bounded-lemma {nil} (complete (_ , _ , step () _) _)
 bounded-lemma {inp f} cφ@(complete (_ , def , step inp tr) F) =
-  fold (inj₂ inp , (f , _) , refl , transitions+defined->defined tr def , λ { Fin.zero → bounded-lemma (input-complete cφ) })
+  apply-ind (inj₂ inp) (transitions+defined->defined tr def) λ{Fin.zero → bounded-lemma (input-complete cφ)}
 bounded-lemma {out f} cφ@(complete (_ , def , step (out fx) tr) F) =
-  fold (inj₂ out , (f , _) , refl , fx , λ { Fin.zero → bounded-lemma (output-complete cφ) })
+  apply-ind (inj₂ out) fx λ{Fin.zero → bounded-lemma (output-complete cφ)}
 
 wt-bounded : WeakTerminationS ⊆ WeakTerminationI
 wt-bounded {nil} spec = fold (inj₁ nil , _ , refl , _ , λ ())
@@ -240,4 +230,4 @@ wt-bounded {out f} spec with spec (_ , out , refl)
 
 wt-complete : WeakTerminationS ⊆ WeakTermination
 wt-complete =
-  Principles.bounded-coind[ WeakTerminationIS , WeakTerminationCOIS ] WeakTerminationS wt-bounded wt-consistent
+  bounded-coind[ WeakTerminationIS , WeakTerminationCOIS ] WeakTerminationS wt-bounded wt-consistent

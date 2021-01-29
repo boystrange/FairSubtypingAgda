@@ -23,6 +23,7 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+open import Data.Empty
 open import Data.Maybe
 open import Data.Product
 open import Data.Sum
@@ -104,3 +105,6 @@ zip-traces :
   (tφ : T HasTrace φ) ->
   Reductions (R # T) (after rφ # after tφ)
 zip-traces (_ , _ , rr) (_ , _ , tr) = zip-red* rr tr
+
+success-not-reduce : ∀{S S'} → Success S → ¬ (Reduction S S')
+success-not-reduce (win#def win _) (sync r _) = win-reduces-⊥ win r

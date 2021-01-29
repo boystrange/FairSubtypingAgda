@@ -108,3 +108,9 @@ Win-win = out λ { _ () }
 
 win->defined : ∀{T} -> Win T -> Defined T
 win->defined (out _) = out
+
+-- if T is not Defined, then it is nil
+not-def->nil : ∀{T} → ¬ (Defined T) → T ≡ nil
+not-def->nil {nil} nd = refl
+not-def->nil {inp f} nd = ⊥-elim (nd inp)
+not-def->nil {out f} nd = ⊥-elim (nd out)

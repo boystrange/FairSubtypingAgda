@@ -29,24 +29,20 @@ open import Data.Sum
 open import Data.List
 open import Data.Fin
 open import Data.Bool renaming (Bool to 𝔹)
-open import Relation.Unary using (_∈_; _⊆_)
+open import Relation.Unary using (_∈_; _⊆_; _∉_)
 open import Relation.Binary.Construct.Closure.ReflexiveTransitive
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 
 open import Common
 
-open import is-meta.InfSys as IS
-open MetaRule
-open IS.IS
-open import is-meta.InfSys.Properties
-open import is-meta.InfSys.Principles
+open import is-lib.InfSys
 
 module FairCompliance-IS where
 
   message : Message 𝔹
   message = record{_?=_ = Data.Bool._≟_}
-
+  
   open import SessionType message
   open import Session message
   open import Transitions message
@@ -74,42 +70,42 @@ module FairCompliance-IS where
   OI-true-r .comp (f , g) =
     (f true .force , g true .force) ∷ [] ,
     --------------------
-    (out f , inp g) , (dom f true × ¬ dom f false)
+    (out f , inp g) , (true ∈ dom f × false ∉ dom f)
 
   OI-false-r : MetaRule U
   OI-false-r .C = Continuation × Continuation
   OI-false-r .comp (f , g) =
     (f false .force , g false .force) ∷ [] ,
     --------------------
-    (out f , inp g) , (dom f false × ¬ dom f true)
+    (out f , inp g) , (false ∈ dom f × true ∉ dom f)
 
   OI-both-r : MetaRule U
   OI-both-r .C = Continuation × Continuation
   OI-both-r .comp (f , g) =
     (f true .force , g true .force) ∷ (f false .force , g false .force) ∷ [] ,
     --------------------
-    (out f , inp g) , (dom f true × dom f false)
+    (out f , inp g) , (true ∈ dom f × false ∈ dom f)
 
   IO-true-r : MetaRule U
   IO-true-r .C = Continuation × Continuation
   IO-true-r .comp (f , g) =
     (f true .force , g true .force) ∷ [] ,
     --------------------
-    (inp f , out g) , (dom g true × ¬ dom g false)
+    (inp f , out g) , (true ∈ dom g × false ∉ dom g)
 
   IO-false-r : MetaRule U
   IO-false-r .C = Continuation × Continuation
   IO-false-r .comp (f , g) =
     (f false .force , g false .force) ∷ [] ,
     --------------------
-    (inp f , out g) , (dom g false × ¬ dom g true)
+    (inp f , out g) , (false ∈ dom g × true ∉ dom g)
 
   IO-both-r : MetaRule U
   IO-both-r .C = Continuation × Continuation
   IO-both-r .comp (f , g) =
     (f true .force , g true .force) ∷ (f false .force , g false .force) ∷ [] ,
     --------------------
-    (inp f , out g) , (dom g true × dom g false)
+    (inp f , out g) , (true ∈ dom g × false ∈ dom g)
 
   co-IO-r : MetaRule U
   co-IO-r .C = Continuation × Continuation × 𝔹
@@ -141,13 +137,17 @@ module FairCompliance-IS where
   FCompCOIS .rules co-io = co-IO-r
 
   _⊢_ : SessionType → SessionType → Set
-  S ⊢ T = Gen⟦ FCompIS , FCompCOIS ⟧ (S , T)
+  S ⊢ T = FCoInd⟦ FCompIS , FCompCOIS ⟧ (S , T)
 
   _⊢ᵢ_ : SessionType → SessionType → Set
   S ⊢ᵢ T = Ind⟦ FCompIS ∪ FCompCOIS ⟧ (S , T)
 
+  {- Properties -}
 
-  {- Soundness -}
+  ¬nil-⊢ : ∀{S} → ¬ (nil ⊢ S)
+  ¬nil-⊢ fc with fc .CoInd⟦_⟧.unfold
+  ... | client-end , _ , refl , ((() , _) , _) , _
+
   ⊢ᵢ-implies-succeed : ∀{S T} → S ⊢ᵢ T → MaySucceed (S # T)
   ⊢ᵢ-implies-succeed (fold (inj₁ client-end , (S , T) , refl , (win , def) , _)) = (S # T) , ε , win#def win def
   ⊢ᵢ-implies-succeed (fold (inj₁ oi-true , (f , g) , refl , (ok-t , _) , pr)) =
@@ -175,16 +175,12 @@ module FairCompliance-IS where
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync inp (out ok-b) ◅ red-Sys' , Succ
 
-  win-reduces-⊥ : ∀{S S' α} → Win S → Transition S α S' → ⊥
-  win-reduces-⊥ (out e) (out !x) = e _ !x
-  
-  success-reduces-⊥ : ∀{S S'} → Success S → Reduction S S' → ⊥
-  success-reduces-⊥ (win#def win _) (sync r _) = win-reduces-⊥ win r
+  {- Soundness -}
 
   fc-sound : ∀{S T} → S ⊢ T → FairComplianceS (S # T)
-  fc-sound fc ε = ⊢ᵢ-implies-succeed (gen-to-ind fc) 
+  fc-sound fc ε = ⊢ᵢ-implies-succeed (fcoind-to-ind fc) 
   fc-sound fc (x ◅ red) with fc .CoInd⟦_⟧.unfold
-  fc-sound fc (x ◅ red) | client-end , _ , refl , ((win , def) , _) , _ = ⊥-elim (success-reduces-⊥ (win#def win def) x)
+  fc-sound fc (x ◅ red) | client-end , _ , refl , ((win , def) , _) , _ = ⊥-elim (success-not-reduce (win#def win def) x)
   fc-sound fc (sync (out ok-f) (inp {x = false}) ◅ red) | oi-true , _ , refl , ((_ , no-f) , _) , _ = ⊥-elim (no-f ok-f)
   fc-sound fc (sync (out _) (inp {x = true}) ◅ red) | oi-true , _ , refl , ((_ , _) , _) , pr = fc-sound (pr zero) red
   fc-sound fc (sync (out _) (inp {x = false}) ◅ red) | oi-false , _ , refl , ((_ , _) , _) , pr = fc-sound (pr zero) red
@@ -199,14 +195,15 @@ module FairCompliance-IS where
   fc-sound fc (sync (inp {x = true}) (out _) ◅ red) | io-both , _ , refl , _ , pr = fc-sound (pr zero) red
 
   {- Boundedness -}
+
   maysucceed-implies-⊢ᵢ : ∀{S T Sys} → Reductions (S # T) Sys → Success Sys → S ⊢ᵢ T
-  maysucceed-implies-⊢ᵢ ε (win#def win def) = IS.fold (inj₁ client-end , _ , refl , (win , def) , λ ())
+  maysucceed-implies-⊢ᵢ ε (win#def win def) = apply-ind (inj₁ client-end) (win , def) λ ()
   maysucceed-implies-⊢ᵢ (sync (out ok) inp ◅ red) Succ =
     let rec = maysucceed-implies-⊢ᵢ red Succ in
-    IS.fold (inj₂ co-oi , _ , refl , ok , λ{zero → rec})
+    apply-ind (inj₂ co-oi) ok λ{zero → rec}
   maysucceed-implies-⊢ᵢ (sync inp (out ok) ◅ red) Succ =
     let rec = maysucceed-implies-⊢ᵢ red Succ in
-    IS.fold (inj₂ co-io , _ , refl , ok , λ{zero → rec})
+    apply-ind (inj₂ co-io) ok λ{zero → rec}
 
   fc-bounded : ∀{S T} → FairComplianceS (S # T) → S ⊢ᵢ T
   fc-bounded fc =
@@ -214,6 +211,7 @@ module FairCompliance-IS where
     maysucceed-implies-⊢ᵢ red-Sys Succ
 
   {- Consistency -}
+
   fc-consistent : ∀{S T} → FairComplianceS (S # T) → ISF[ FCompIS ] (λ{(S , T) → FairComplianceS (S # T)}) (S , T)
   fc-consistent fc with fc ε
   fc-consistent fc | .(_ # _) , ε , win#def win def = client-end , _ , refl , (win , def) , λ ()
@@ -251,6 +249,7 @@ module FairCompliance-IS where
     io-both , _ , refl , (ok-t , ok-f) , prems
 
   {- Completeness -}
+  
   fc-complete : ∀{S T} → FairComplianceS (S # T) → S ⊢ T
   fc-complete =
     let S = λ{(S , T) → FairComplianceS (S # T)} in

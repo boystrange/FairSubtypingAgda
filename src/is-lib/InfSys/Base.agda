@@ -10,7 +10,7 @@ open import Level using (Lift) renaming (suc to _++)
 open import Size
 open import Codata.Thunk
 
-module is-meta.InfSys.Base {l} where
+module is-lib.InfSys.Base {l} where
 
   record MetaRule (U : Set l) : Set (l ++) where
     constructor rule
@@ -39,14 +39,6 @@ module is-meta.InfSys.Base {l} where
 
     RClosed : (U → Set l) → Set l
     RClosed J = ∀ {c} → side c → (∀ i → J (get-prem c i)) → J (conclu c)
-
-    -- closed implies prefix
-    --apply[_] : ∀{J u} → RClosed J → RF[_] J u → J u
-    --apply[_] cl (c , refl , sd , pr) = cl sd pr
-
-    -- prefix implies closed
-    app : ∀{J} → (∀{u} → RF[_] J u → J u) → RClosed J
-    app f = λ sd prems → f (_ , refl , sd , prems)
     
   open MetaRule
 
@@ -85,31 +77,12 @@ module is-meta.InfSys.Base {l} where
   (is ⊓ P) .Names = is .Names
   (is ⊓ P) .rules rn = addSideCond (is .rules rn) P
 
-------------------------------------------
--- Inductive interpretation
+  {- Properties -}
+  
+  -- closed implies prefix
+  closed⇒prefix : (m : MetaRule U) → ∀{J u} → RClosed m J → RF[ m ] J u → J u
+  closed⇒prefix _ cl (c , refl , sd , pr) = cl sd pr
 
-  data Ind⟦_⟧ (is : IS U) : U →  Set l where
-    fold : ∀ {u} →  ISF[ is ] Ind⟦ is ⟧ u → Ind⟦ is ⟧ u
-
----------------------------------------------
--- Coinductive interpretation
-
-  record CoInd⟦_⟧ (is : IS U) (u : U) : Set l where
-    coinductive
-    constructor cofold_
-    field
-      unfold : ISF[ is ] CoInd⟦ is ⟧ u
-
-  data SCoInd⟦_⟧ (is : IS U) : U → Size → Set l where
-    sfold : ∀ {u i} → ISF[ is ] (λ u → Thunk (SCoInd⟦ is ⟧ u) i) u → SCoInd⟦ is ⟧ u i
-
--------------------------------------------------------------------------------------------------------
--- Generalized inference systems
-  SGen⟦_,_⟧ : (I C : IS U) → U → Size → Set l
-  SGen⟦ I , C ⟧ = SCoInd⟦ I ⊓ Ind⟦ I ∪ C ⟧ ⟧
-
-  Gen⟦_,_⟧ : (I C : IS U) → U → Set l
-  Gen⟦ I , C ⟧ = CoInd⟦ I ⊓ Ind⟦ I ∪ C ⟧ ⟧
-
-  CoGen⟦_,_⟧ : (I C : IS U) → U → Set l
-  CoGen⟦ I , C ⟧ = Ind⟦ (I ∪ C) ∪ (ISfromPred CoInd⟦ C ⟧) ⟧
+  -- prefix implies closed
+  prefix⇒closed : (m : MetaRule U) → ∀{J} → (∀{u} → RF[ m ] J u → J u) → RClosed m J
+  prefix⇒closed _ f = λ sd prems → f (_ , refl , sd , prems)
