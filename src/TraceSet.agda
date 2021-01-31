@@ -83,21 +83,21 @@ co-definition {_} {φ} xφ rewrite co-trace-involution φ = xφ
 co-inversion : ∀{X φ} -> co-trace φ ∈ CoSet X -> φ ∈ X
 co-inversion {_} {φ} coφ rewrite co-trace-involution φ = coφ
 
---| COMPLETE TRACES |--
+--| MAXIMAL TRACES |--
 
-data Complete : TraceSet -> Trace -> Set where
-  complete : ∀{X φ} (wit : φ ∈ X) (F : ∀{ψ} -> φ ⊑ ψ -> ψ ∈ X -> ψ ≡ φ) -> Complete X φ
+data Maximal : TraceSet -> Trace -> Set where
+  maximal : ∀{X φ} (wit : φ ∈ X) (F : ∀{ψ} -> φ ⊑ ψ -> ψ ∈ X -> ψ ≡ φ) -> Maximal X φ
 
-complete-sub : ∀{X} -> Complete X ⊆ X
-complete-sub (complete x _) = x
+maximal-sub : ∀{X} -> Maximal X ⊆ X
+maximal-sub (maximal x _) = x
 
-derive-complete : ∀{α φ X} -> α ∷ φ ∈ Complete X -> φ ∈ Complete (X ∂ α)
-derive-complete (complete wit F) = complete wit λ le p -> ∷-injectiveʳ (F (some le) p)
+derive-maximal : ∀{α φ X} -> α ∷ φ ∈ Maximal X -> φ ∈ Maximal (X ∂ α)
+derive-maximal (maximal wit F) = maximal wit λ le p -> ∷-injectiveʳ (F (some le) p)
 
-input-complete : ∀{x φ f} -> I x ∷ φ ∈ Complete ⟦ inp f ⟧ -> φ ∈ Complete ⟦ f x .force ⟧
-input-complete (complete (_ , def , step inp tr) F) =
-  complete (_ , def , tr) λ { le tψ -> ∷-injectiveʳ (F (some le) (inp-has-trace tψ)) }
+input-maximal : ∀{x φ f} -> I x ∷ φ ∈ Maximal ⟦ inp f ⟧ -> φ ∈ Maximal ⟦ f x .force ⟧
+input-maximal (maximal (_ , def , step inp tr) F) =
+  maximal (_ , def , tr) λ { le tψ -> ∷-injectiveʳ (F (some le) (inp-has-trace tψ)) }
 
-output-complete : ∀{x φ f} -> O x ∷ φ ∈ Complete ⟦ out f ⟧ -> φ ∈ Complete ⟦ f x .force ⟧
-output-complete (complete (_ , def , step (out _) tr) F) =
-  complete (_ , def , tr) λ { le tψ -> ∷-injectiveʳ (F (some le) (out-has-trace tψ)) }
+output-maximal : ∀{x φ f} -> O x ∷ φ ∈ Maximal ⟦ out f ⟧ -> φ ∈ Maximal ⟦ f x .force ⟧
+output-maximal (maximal (_ , def , step (out _) tr) F) =
+  maximal (_ , def , tr) λ { le tψ -> ∷-injectiveʳ (F (some le) (out-has-trace tψ)) }

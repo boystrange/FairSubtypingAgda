@@ -134,46 +134,46 @@ decode-sup sem {O _ ∷ _} hasφ | out _ =
   let _ , def , tr = decode-sup (derive-semantics sem (O _)) hasφ in
   _ , def , step (out (transitions+defined->defined tr def)) tr
 
-decode+complete->win :
+decode+maximal->win :
   ∀{X φ}
   (sem : Semantics X)
   (rφ : decode sem .force HasTrace φ) ->
-  φ ∈ Complete X ->
+  φ ∈ Maximal X ->
   Win (after rφ)
-decode+complete->win sem rφ comp with kind? sem
-decode+complete->win sem (_ , () , refl) comp | emp sub
-decode+complete->win sem (_ , _ , step () _) comp | emp sub
-decode+complete->win sem (_ , _ , refl) comp | eps _ = Win-win
-decode+complete->win sem (_ , _ , step (out ()) _) comp | eps _
-decode+complete->win sem (_ , def , refl) (complete _ F) | inp w with F none w
+decode+maximal->win sem rφ comp with kind? sem
+decode+maximal->win sem (_ , () , refl) comp | emp sub
+decode+maximal->win sem (_ , _ , step () _) comp | emp sub
+decode+maximal->win sem (_ , _ , refl) comp | eps _ = Win-win
+decode+maximal->win sem (_ , _ , step (out ()) _) comp | eps _
+decode+maximal->win sem (_ , def , refl) (maximal _ F) | inp w with F none w
 ... | ()
-decode+complete->win sem (_ , def , step inp tr) comp | inp _ =
-  decode+complete->win (derive-semantics sem (I _)) (_ , def , tr) (derive-complete comp)
-decode+complete->win sem (_ , def , refl) (complete _ F) | out w with F none w
+decode+maximal->win sem (_ , def , step inp tr) comp | inp _ =
+  decode+maximal->win (derive-semantics sem (I _)) (_ , def , tr) (derive-maximal comp)
+decode+maximal->win sem (_ , def , refl) (maximal _ F) | out w with F none w
 ... | ()
-decode+complete->win sem (_ , def , step (out !x) tr) comp | out w =
-  decode+complete->win (derive-semantics sem (O _)) (_ , def , tr) (derive-complete comp)
+decode+maximal->win sem (_ , def , step (out !x) tr) comp | out w =
+  decode+maximal->win (derive-semantics sem (O _)) (_ , def , tr) (derive-maximal comp)
 
-win->complete :
+win->maximal :
   ∀{T φ ψ} ->
   φ ⊑ ψ ->
   (tφ : T HasTrace φ) ->
   T HasTrace ψ ->
   Win (after tφ) ->
   φ ≡ ψ
-win->complete le (_ , tdef , refl) (_ , sdef , refl) w = refl
-win->complete le (_ , tdef , refl) (_ , sdef , step (out !x) sr) (out U) = ⊥-elim (U _ !x)
-win->complete (some le) (_ , tdef , step inp tr) (_ , sdef , step inp sr) w
-  rewrite win->complete le (_ , tdef , tr) (_ , sdef , sr) w = refl
-win->complete (some le) (_ , tdef , step (out _) tr) (_ , sdef , step (out _) sr) w
-  rewrite win->complete le (_ , tdef , tr) (_ , sdef , sr) w = refl
+win->maximal le (_ , tdef , refl) (_ , sdef , refl) w = refl
+win->maximal le (_ , tdef , refl) (_ , sdef , step (out !x) sr) (out U) = ⊥-elim (U _ !x)
+win->maximal (some le) (_ , tdef , step inp tr) (_ , sdef , step inp sr) w
+  rewrite win->maximal le (_ , tdef , tr) (_ , sdef , sr) w = refl
+win->maximal (some le) (_ , tdef , step (out _) tr) (_ , sdef , step (out _) sr) w
+  rewrite win->maximal le (_ , tdef , tr) (_ , sdef , sr) w = refl
 
-decode+win->complete :
+decode+win->maximal :
   ∀{X φ}
   (sem : Semantics X)
   (rφ : decode sem .force HasTrace φ) ->
   Win (after rφ) ->
-  φ ∈ Complete X
-decode+win->complete {X} {φ} sem rφ w =
-  complete (decode-sub sem rφ) λ le xψ -> let rψ = decode-sup sem xψ in
-                                          sym (win->complete le rφ rψ w)
+  φ ∈ Maximal X
+decode+win->maximal {X} {φ} sem rφ w =
+  maximal (decode-sub sem rφ) λ le xψ -> let rψ = decode-sup sem xψ in
+                                          sym (win->maximal le rφ rψ w)

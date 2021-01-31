@@ -157,20 +157,20 @@ co-trace-swap-⊑ : ∀{φ ψ} -> co-trace φ ⊑ ψ -> φ ⊑ co-trace ψ
 co-trace-swap-⊑ {[]} none = none
 co-trace-swap-⊑ {α ∷ _} (some le) rewrite co-action-involution α = some (co-trace-swap-⊑ le)
 
-co-complete : ∀{X φ} -> φ ∈ Complete X -> co-trace φ ∈ Complete (CoSet X)
-co-complete {X} (complete xφ F) =
-  complete (co-definition {X} xφ) λ le xψ -> let le' = co-trace-swap-⊑ le in
+co-maximal : ∀{X φ} -> φ ∈ Maximal X -> co-trace φ ∈ Maximal (CoSet X)
+co-maximal {X} (maximal xφ F) =
+  maximal (co-definition {X} xφ) λ le xψ -> let le' = co-trace-swap-⊑ le in
                                              let eq = F le' xψ in
                                              co-trace-swap eq
 
-co-complete-2 : ∀{X φ} -> co-trace φ ∈ Complete (CoSet X) -> φ ∈ Complete X
-co-complete-2 {X} (complete wit F) =
-  complete (co-inversion {X} wit) λ le xψ -> let le' = ⊑-co-trace le in
+co-maximal-2 : ∀{X φ} -> co-trace φ ∈ Maximal (CoSet X) -> φ ∈ Maximal X
+co-maximal-2 {X} (maximal wit F) =
+  maximal (co-inversion {X} wit) λ le xψ -> let le' = ⊑-co-trace le in
                                              let eq = F le' (co-definition {X} xψ) in
                                              co-trace-injective eq
 
-co-trace->co-set : ∀{X φ} -> co-trace φ ∈ Complete X -> φ ∈ Complete (CoSet X)
-co-trace->co-set {_} {φ} cxφ with co-complete cxφ
+co-trace->co-set : ∀{X φ} -> co-trace φ ∈ Maximal X -> φ ∈ Maximal (CoSet X)
+co-trace->co-set {_} {φ} cxφ with co-maximal cxφ
 ... | res rewrite co-trace-involution φ = res
 
 discriminator-after-sync->defined :
@@ -184,9 +184,9 @@ discriminator-after-sync->defined {R} {T} {S} sub rdef rr tr with Defined? R
 ... | yes rdef' = rdef'
 ... | no nrdef' with defined-becomes-nil rdef nrdef' rr
 ... | ψ , x , eq , rψ , nrφ rewrite eq with input-does-not-win rψ rr
-... | nwin with contraposition (decode+complete->win (co-semantics (disc-set->semantics T S)) rψ) nwin
+... | nwin with contraposition (decode+maximal->win (co-semantics (disc-set->semantics T S)) rψ) nwin
 ... | ncψ with decode-sub (co-semantics (disc-set->semantics T S)) rψ
-... | dsψ with contraposition (disc-set-complete-1 dsψ) (contraposition co-trace->co-set ncψ)
+... | dsψ with contraposition (disc-set-maximal-1 dsψ) (contraposition co-trace->co-set ncψ)
 ... | nnsψ with has-trace-double-negation nnsψ
 ... | sψ with let tr' = subst (λ z -> Transitions _ z _) (co-trace-swap eq) tr in
               let tr'' = subst (λ z -> Transitions _ z _) (co-trace-++ ψ (I x ∷ [])) tr' in
@@ -230,22 +230,22 @@ discriminator-compliant {T} {S} sub div {R' # T'} reds with unzip-red* reds
 ... | rdef' with decode-sub (co-semantics (disc-set->semantics T S)) (_ , rdef' , rr)
 ... | dsφ rewrite co-trace-involution φ =
   case completion sub dsφ of
-  λ { (inj₁ (ψ , lt , cψ@(complete dsψ _))) ->
+  λ { (inj₁ (ψ , lt , cψ@(maximal dsψ _))) ->
       let rψ = decode-sup (co-semantics (disc-set->semantics T S)) (co-definition {DiscSet T S} dsψ) in
       let tψ = disc-set-subset dsψ in
       let rr' = subst (λ z -> Transitions _ z _) (⊑-after-co-trace (⊏->⊑ lt)) (extend-transitions (⊑-co-trace (⊏->⊑ lt)) rr rψ) in
       let tr' = extend-transitions (⊏->⊑ lt) tr tψ in
-      let winr = decode+complete->win (co-semantics (disc-set->semantics T S)) rψ (co-complete cψ) in
+      let winr = decode+maximal->win (co-semantics (disc-set->semantics T S)) rψ (co-maximal cψ) in
       let reds' = zip-red* rr' tr' in
       _ , reds' , win#def winr (after-trace-defined-2 tψ)
     ; (inj₂ (cφ , nsφ)) ->
-      let winr = decode+complete->win (co-semantics (disc-set->semantics T S)) (_ , rdef' , rr) (co-complete cφ) in
+      let winr = decode+maximal->win (co-semantics (disc-set->semantics T S)) (_ , rdef' , rr) (co-maximal cφ) in
       _ , ε , win#def winr (after-trace-defined (disc-set-subset dsφ) tr) }
 
 discriminator-not-compliant : ∀{T S} -> T <: S -> T ↑ S -> ¬ FairComplianceS (discriminator T S # S)
 discriminator-not-compliant {T} {S} sub div comp with comp ε
 ... | _ , reds , win#def w def with unzip-red* reds
-... | φ , rr , sr with decode+win->complete (co-semantics (disc-set->semantics T S)) (_ , win->defined w , rr) w
-... | cφ with co-complete-2 {DiscSet T S} cφ
-... | csφ with disc-set-complete-2 sub csφ
+... | φ , rr , sr with decode+win->maximal (co-semantics (disc-set->semantics T S)) (_ , win->defined w , rr) w
+... | cφ with co-maximal-2 {DiscSet T S} cφ
+... | csφ with disc-set-maximal-2 sub csφ
 ... | nsφ = nsφ (_ , def , sr)

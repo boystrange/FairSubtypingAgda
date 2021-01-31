@@ -97,7 +97,7 @@ out-co-r .comp (f , x) =
   out f , (x ∈ dom f)
 
 WeakTerminationS : SessionType -> Set
-WeakTerminationS T = ∀{φ} -> φ ∈ ⟦ T ⟧ -> ∃[ ψ ] (φ ++ ψ ∈ Complete ⟦ T ⟧)
+WeakTerminationS T = ∀{φ} -> φ ∈ ⟦ T ⟧ -> ∃[ ψ ] (φ ++ ψ ∈ Maximal ⟦ T ⟧)
 
 WeakTerminationIS : IS U
 Names WeakTerminationIS = RuleNames
@@ -116,29 +116,29 @@ WeakTermination = FCoInd⟦ WeakTerminationIS , WeakTerminationCOIS ⟧
 WeakTerminationI : SessionType -> Set
 WeakTerminationI = Ind⟦ WeakTerminationIS ∪ WeakTerminationCOIS ⟧
 
-lemma-inp : ∀{f φ x} -> φ ∈ Complete ⟦ f x .force ⟧ -> I x ∷ φ ∈ Complete ⟦ inp f ⟧
-lemma-inp (complete wit F) =
-  complete (inp-has-trace wit) λ { (some le) (_ , def , step inp tr) → cong (_ ∷_) (F le (_ , def , tr)) }
+lemma-inp : ∀{f φ x} -> φ ∈ Maximal ⟦ f x .force ⟧ -> I x ∷ φ ∈ Maximal ⟦ inp f ⟧
+lemma-inp (maximal wit F) =
+  maximal (inp-has-trace wit) λ { (some le) (_ , def , step inp tr) → cong (_ ∷_) (F le (_ , def , tr)) }
 
-lemma-out : ∀{f φ x} -> φ ∈ Complete ⟦ f x .force ⟧ -> O x ∷ φ ∈ Complete ⟦ out f ⟧
-lemma-out (complete wit F) =
-  complete (out-has-trace wit) λ { (some le) (_ , def , step (out _) tr) → cong (_ ∷_) (F le (_ , def , tr)) }
+lemma-out : ∀{f φ x} -> φ ∈ Maximal ⟦ f x .force ⟧ -> O x ∷ φ ∈ Maximal ⟦ out f ⟧
+lemma-out (maximal wit F) =
+  maximal (out-has-trace wit) λ { (some le) (_ , def , step (out _) tr) → cong (_ ∷_) (F le (_ , def , tr)) }
 
-lemma-end : ∀{f} -> true ∉ dom f -> false ∉ dom f -> [] ∈ Complete ⟦ inp f ⟧
-lemma-end nft nff = complete (_ , inp , refl)
+lemma-end : ∀{f} -> true ∉ dom f -> false ∉ dom f -> [] ∈ Maximal ⟦ inp f ⟧
+lemma-end nft nff = maximal (_ , inp , refl)
   λ { {[]} none _ → refl
     ; {O _ ∷ _} none (_ , _ , step () _)
     ; {I false ∷ ψ} none (_ , def , step inp tr) → ⊥-elim (nff (transitions+defined->defined tr def))
     ; {I true ∷ ψ} none (_ , def , step inp tr) → ⊥-elim (nft (transitions+defined->defined tr def)) }
 
-lemma-win : ∀{f} -> true ∉ dom f -> false ∉ dom f -> [] ∈ Complete ⟦ out f ⟧
-lemma-win nft nff = complete (_ , out , refl)
+lemma-win : ∀{f} -> true ∉ dom f -> false ∉ dom f -> [] ∈ Maximal ⟦ out f ⟧
+lemma-win nft nff = maximal (_ , out , refl)
   λ { {[]} none _ → refl
     ; {I _ ∷ _} none (_ , _ , step () _)
     ; {O false ∷ ψ} none (_ , def , step (out ff) _) → ⊥-elim (nff ff)
     ; {O true ∷ ψ} none (_ , def , step (out ft) _) → ⊥-elim (nft ft) }
 
-may-terminate : ∀{T} -> Defined T -> WeakTerminationI T -> Satisfiable (Complete ⟦ T ⟧)
+may-terminate : ∀{T} -> Defined T -> WeakTerminationI T -> Satisfiable (Maximal ⟦ T ⟧)
 may-terminate () (fold (inj₁ nil , _ , refl , _ , _))
 may-terminate _ (fold (inj₁ inp , f , refl , _ , premise)) with true ∈? f | false ∈? f
 ... | yes ft | yes ff = let _ , cψ = may-terminate ft (premise Fin.zero) in _ , lemma-inp cψ
@@ -171,55 +171,55 @@ wt-sound wt (_ , def , step (out {_} {true} fx) tr) | out , C , refl , sc , prem
   let _ , cψ = wt-sound (premise Fin.zero) (_ , def , tr) in
   _ , lemma-out cψ
 
-lemma-input-complete : ∀{f x} -> WeakTerminationS (inp f) -> WeakTerminationS (f x .force)
-lemma-input-complete {f} {x} spec tφ with x ∈? f
+lemma-input-maximal : ∀{f x} -> WeakTerminationS (inp f) -> WeakTerminationS (f x .force)
+lemma-input-maximal {f} {x} spec tφ with x ∈? f
 ... | no nfx = ⊥-elim (nfx (has-trace->defined tφ))
 ... | yes fx with spec (inp-has-trace tφ)
-... | _ , cψ = _ , input-complete cψ
+... | _ , cψ = _ , input-maximal cψ
 
-lemma-output-complete : ∀{f x} -> WeakTerminationS (out f) -> WeakTerminationS (f x .force)
-lemma-output-complete {f} {x} spec tφ with x ∈? f
+lemma-output-maximal : ∀{f x} -> WeakTerminationS (out f) -> WeakTerminationS (f x .force)
+lemma-output-maximal {f} {x} spec tφ with x ∈? f
 ... | no nfx = ⊥-elim (nfx (has-trace->defined tφ))
 ... | yes fx with spec (out-has-trace tφ)
-... | _ , cψ = _ , output-complete cψ
+... | _ , cψ = _ , output-maximal cψ
 
 wt-consistent : WeakTerminationS ⊆ ISF[ WeakTerminationIS ] WeakTerminationS
 wt-consistent {nil} spec = nil , _ , refl , _ , λ ()
 wt-consistent {inp f} spec =
-  inp , f , refl , _ , λ { Fin.zero           → lemma-input-complete spec
-                         ; (Fin.suc Fin.zero) → lemma-input-complete spec }
+  inp , f , refl , _ , λ { Fin.zero           → lemma-input-maximal spec
+                         ; (Fin.suc Fin.zero) → lemma-input-maximal spec }
 wt-consistent {out f} spec =
-  out , f , refl , _ , λ { Fin.zero           → lemma-output-complete spec
-                         ; (Fin.suc Fin.zero) → lemma-output-complete spec}
+  out , f , refl , _ , λ { Fin.zero           → lemma-output-maximal spec
+                         ; (Fin.suc Fin.zero) → lemma-output-maximal spec}
 
 undefined->terminates : ∀{T} -> ¬ Defined T -> WeakTerminationI T
 undefined->terminates {nil}   _   = apply-ind (inj₁ nil) _ λ ()
 undefined->terminates {inp f} und = ⊥-elim (und inp)
 undefined->terminates {out f} und = ⊥-elim (und out)
 
-input-complete->terminates : ∀{f x} -> [] ∈ Complete ⟦ inp f ⟧ -> WeakTerminationI (f x .force)
-input-complete->terminates {f} {x} (complete (_ , inp , refl) F) with x ∈? f
+input-maximal->terminates : ∀{f x} -> [] ∈ Maximal ⟦ inp f ⟧ -> WeakTerminationI (f x .force)
+input-maximal->terminates {f} {x} (maximal (_ , inp , refl) F) with x ∈? f
 ... | no nfx = undefined->terminates nfx
 ... | yes fx with F none (_ , fx , step inp refl)
 ... | ()
 
-output-complete->terminates : ∀{f x} -> [] ∈ Complete ⟦ out f ⟧ -> WeakTerminationI (f x .force)
-output-complete->terminates {f} {x} (complete (_ , out , refl) F) with x ∈? f
+output-maximal->terminates : ∀{f x} -> [] ∈ Maximal ⟦ out f ⟧ -> WeakTerminationI (f x .force)
+output-maximal->terminates {f} {x} (maximal (_ , out , refl) F) with x ∈? f
 ... | no nfx = undefined->terminates nfx
 ... | yes fx with F none (_ , fx , step (out fx) refl)
 ... | ()
 
-bounded-lemma : ∀{T φ} -> φ ∈ Complete ⟦ T ⟧ -> WeakTerminationI T
-bounded-lemma {nil} (complete (_ , () , refl) _)
-bounded-lemma {inp f} c[]@(complete (_ , def , refl) F) =
-  apply-ind (inj₁ inp) _ λ{Fin.zero → input-complete->terminates c[] ; (Fin.suc Fin.zero) → input-complete->terminates c[]}
-bounded-lemma {out f} c[]@(complete (_ , def , refl) F) =
-  apply-ind (inj₁ out) _ λ{Fin.zero → output-complete->terminates c[] ; (Fin.suc Fin.zero) → output-complete->terminates c[]}
-bounded-lemma {nil} (complete (_ , _ , step () _) _)
-bounded-lemma {inp f} cφ@(complete (_ , def , step inp tr) F) =
-  apply-ind (inj₂ inp) (transitions+defined->defined tr def) λ{Fin.zero → bounded-lemma (input-complete cφ)}
-bounded-lemma {out f} cφ@(complete (_ , def , step (out fx) tr) F) =
-  apply-ind (inj₂ out) fx λ{Fin.zero → bounded-lemma (output-complete cφ)}
+bounded-lemma : ∀{T φ} -> φ ∈ Maximal ⟦ T ⟧ -> WeakTerminationI T
+bounded-lemma {nil} (maximal (_ , () , refl) _)
+bounded-lemma {inp f} c[]@(maximal (_ , def , refl) F) =
+  apply-ind (inj₁ inp) _ λ{Fin.zero → input-maximal->terminates c[] ; (Fin.suc Fin.zero) → input-maximal->terminates c[]}
+bounded-lemma {out f} c[]@(maximal (_ , def , refl) F) =
+  apply-ind (inj₁ out) _ λ{Fin.zero → output-maximal->terminates c[] ; (Fin.suc Fin.zero) → output-maximal->terminates c[]}
+bounded-lemma {nil} (maximal (_ , _ , step () _) _)
+bounded-lemma {inp f} cφ@(maximal (_ , def , step inp tr) F) =
+  apply-ind (inj₂ inp) (transitions+defined->defined tr def) λ{Fin.zero → bounded-lemma (input-maximal cφ)}
+bounded-lemma {out f} cφ@(maximal (_ , def , step (out fx) tr) F) =
+  apply-ind (inj₂ out) fx λ{Fin.zero → bounded-lemma (output-maximal cφ)}
 
 wt-bounded : WeakTerminationS ⊆ WeakTerminationI
 wt-bounded {nil} spec = fold (inj₁ nil , _ , refl , _ , λ ())
@@ -228,6 +228,6 @@ wt-bounded {inp f} spec with spec (_ , inp , refl)
 wt-bounded {out f} spec with spec (_ , out , refl)
 ... | _ , cψ = bounded-lemma cψ
 
-wt-complete : WeakTerminationS ⊆ WeakTermination
-wt-complete =
+wt-maximal : WeakTerminationS ⊆ WeakTermination
+wt-maximal =
   bounded-coind[ WeakTerminationIS , WeakTerminationCOIS ] WeakTerminationS wt-bounded wt-consistent

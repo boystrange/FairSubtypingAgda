@@ -162,7 +162,7 @@ disc-set-disjoint :
 disc-set-disjoint (inc _ sφ _) nsφ = ⊥-elim (nsφ sφ)
 disc-set-disjoint (exc eq _ sψ _ _ _) nsφ = _ , _ , eq , sψ
 
--- --| BEGIN COMPLETE TRACES |--
+-- --| BEGIN MAXIMAL TRACES |--
 
 diverge-forward-input :
   ∀{f g x φ} -> DivergeForward (inp f) (inp g) (I x ∷ φ)
@@ -218,14 +218,14 @@ prefix-last-element {φ' = x ∷ φ'} {ψ' = x₁ ∷ ψ'} (some pre) e1 e2 with
 ... | inj₁ eq rewrite eq = inj₁ refl
 ... | inj₂ pre' = inj₂ (some pre')
 
-disc-set-complete-1 :
+disc-set-maximal-1 :
   ∀{T S φ} ->
   φ ∈ DiscSet T S ->
   ¬ S HasTrace φ ->
-  φ ∈ Complete (DiscSet T S)
-disc-set-complete-1 dsφ nsφ with disc-set-disjoint dsφ nsφ
+  φ ∈ Maximal (DiscSet T S)
+disc-set-maximal-1 dsφ nsφ with disc-set-disjoint dsφ nsφ
 ... | _ , _ , refl , sψ =
-  complete dsφ λ le ds' ->
+  maximal dsφ λ le ds' ->
   let _ , _ , eq , sψ' = disc-set-disjoint ds' (contraposition (⊑-has-trace le) nsφ) in
   case prefix-last-element le refl eq of λ
   { (inj₁ refl) → refl
@@ -265,7 +265,7 @@ completion :
   ∀{φ T S} ->
   T <: S ->
   φ ∈ DiscSet T S ->
-  (∃[ ψ ] (φ ⊏ ψ × ψ ∈ Complete (DiscSet T S))) ⊎ (φ ∈ Complete (DiscSet T S) × ¬ S HasTrace φ)
+  (∃[ ψ ] (φ ⊏ ψ × ψ ∈ Maximal (DiscSet T S))) ⊎ (φ ∈ Maximal (DiscSet T S) × ¬ S HasTrace φ)
 completion {φ} sub (inc tφ sφ div←φ) with div←φ (⊑-refl _)
 ... | div rewrite ⊑-has-trace-after tφ | ⊑-has-trace-after sφ =
   let χ = _↑_.trace div in
@@ -281,20 +281,20 @@ completion {φ} sub (inc tφ sφ div←φ) with div←φ (⊑-refl _)
   let divφ←ψ = diverge-forward->backward tφ/χ sφ/nχ divφ→χ ψ⊑χ tφ/ψ sφ/ψ in
   let div←ψ  = append-diverge-backward tφ sφ tφ/ψ sφ/ψ div←φ divφ←ψ in
   let ds = exc {_} {_} {φ ++ (ψ ∷ʳ O x)} {φ ++ ψ} {x} (append-snoc {φ} {ψ} {O x}) tφψ sφψ tφψx sφnψx div←ψ in
-  inj₁ (φ ++ (ψ ∷ʳ O x) , ⊏-++ , disc-set-complete-1 ds sφnψx)
+  inj₁ (φ ++ (ψ ∷ʳ O x) , ⊏-++ , disc-set-maximal-1 ds sφnψx)
 completion sub ds@(exc _ _ _ _ nsφ _) =
-  inj₂ (disc-set-complete-1 ds nsφ , nsφ)
+  inj₂ (disc-set-maximal-1 ds nsφ , nsφ)
 
-disc-set-complete-2 :
+disc-set-maximal-2 :
   ∀{T S φ} ->
   T <: S ->
-  φ ∈ Complete (DiscSet T S) ->
+  φ ∈ Maximal (DiscSet T S) ->
   ¬ S HasTrace φ
-disc-set-complete-2 sub (complete dφ F) sφ with completion sub dφ
-... | inj₁ (ψ , φ⊏ψ , complete dψ _) = ⊏->≢ φ⊏ψ (sym (F (⊏->⊑ φ⊏ψ) dψ))
+disc-set-maximal-2 sub (maximal dφ F) sφ with completion sub dφ
+... | inj₁ (ψ , φ⊏ψ , maximal dψ _) = ⊏->≢ φ⊏ψ (sym (F (⊏->⊑ φ⊏ψ) dψ))
 ... | inj₂ (_ , nsφ) = nsφ sφ
 
---| END COMPLETE TRACES |--
+--| END MAXIMAL TRACES |--
 
 -- Sia R il session type determinato da disc-set T S quando T ↑
 -- S. L'obiettivo è dimostrare che R |- T e ¬ R |- S
@@ -309,10 +309,10 @@ disc-set-complete-2 sub (complete dφ F) sφ with completion sub dφ
 -- ogni traccia di disc-set T S è prefisso di una traccia completa
 -- di disc-set T S.
 --
--- ∀ φ ∈ R => ∃ ψ : φ ++ ψ ∈ Complete R
+-- ∀ φ ∈ R => ∃ ψ : φ ++ ψ ∈ Maximal R
 --
 -- ¬ R |- S
 --
 -- Dimostrare che ogni traccia completa di R non è una traccia di S.
 --
--- Complete R ∩ ⟦ S ⟧ ≡ ∅
+-- Maximal R ∩ ⟦ S ⟧ ≡ ∅
