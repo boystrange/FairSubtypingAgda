@@ -228,6 +228,6 @@ wt-bounded {inp f} spec with spec (_ , inp , refl)
 wt-bounded {out f} spec with spec (_ , out , refl)
 ... | _ , cψ = bounded-lemma cψ
 
-wt-maximal : WeakTerminationS ⊆ WeakTermination
-wt-maximal =
+wt-complete : WeakTerminationS ⊆ WeakTermination
+wt-complete =
   bounded-coind[ WeakTerminationIS , WeakTerminationCOIS ] WeakTerminationS wt-bounded wt-consistent
