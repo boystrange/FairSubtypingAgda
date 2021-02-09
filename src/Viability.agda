@@ -55,6 +55,7 @@ open import Transitions message
 open import HasTrace message
 open import TraceSet message
 open import FairCompliance message
+open import Semantics message
 open import FairCompliance-IS renaming (U to U-FComp)
 
 U : Set
@@ -309,32 +310,67 @@ get-⊢ fv (sync r _ ◅ _) | out , _ , refl , (e , _) , _ = ⊥-elim (win-reduc
 fv-set : ∀{R} → FairViability R → TraceSet
 fv-set fv = ⟦ get-service fv ⟧
 
+-- Schema: induction over prefix
 fv-set-prclosed : ∀{R} → (fv : FairViability R) → PrefixClosed (fv-set fv)
 fv-set-prclosed fv none _ = (get-service fv) , (FV->Defined fv , refl)
 fv-set-prclosed fv (some pref) (S , def , step t tr) with fv .CoInd⟦_⟧.unfold
-fv-set-prclosed fv (some pref) (S , def , step (out {x = false} !x) tr) | inp , (_ , false) , refl , _ , pr =
+fv-set-prclosed fv (some pref) (S , def , step (out {x = false} !x) tr)   | inp , (_ , false) , refl , _ , pr =
   let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
   S' , def' , step (out !x) tr'
-fv-set-prclosed fv (some pref) (S , def , step (out {x = true} !x) tr) | inp , (_ , true) , refl , _ , pr =
+fv-set-prclosed fv (some pref) (S , def , step (out {x = true} !x) tr)    | inp , (_ , true) , refl , _ , pr =
   let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
   S' , def' , step (out !x) tr'
-fv-set-prclosed fv (some none) (.nil , () , step (out !x) refl) | out , _ , refl , _
-fv-set-prclosed fv (some _) (.nil , () , step (inp {x = false}) refl) | out-t , _ , refl , _
-fv-set-prclosed fv (some _) (_ , _ , step (inp {x = false}) (step () _)) | out-t , _ , refl , _
-fv-set-prclosed fv (some pref) (S , def , step (inp {x = true}) tr) | out-t , _ , refl , _ , pr =
+fv-set-prclosed fv (some none) (.nil , () , step (out !x) refl)           | out , _ , refl , _
+fv-set-prclosed fv (some _) (.nil , () , step (inp {x = false}) refl)     | out-t , _ , refl , _
+fv-set-prclosed fv (some _) (_ , _ , step (inp {x = false}) (step () _))  | out-t , _ , refl , _
+fv-set-prclosed fv (some pref) (S , def , step (inp {x = true}) tr)       | out-t , _ , refl , _ , pr =
   let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
   S' , def' , step inp tr'
-fv-set-prclosed fv (some pref) (S , def , step (inp {x = false}) tr) | out-f , _ , refl , _ , pr =
+fv-set-prclosed fv (some pref) (S , def , step (inp {x = false}) tr)      | out-f , _ , refl , _ , pr =
   let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
   S' , def' , step inp tr'
-fv-set-prclosed fv (some _) (.nil , () , step (inp {x = true}) refl) | out-f , _ , refl , _
-fv-set-prclosed fv (some _) (_ , _ , step (inp {x = true}) (step () _)) | out-f , _ , refl , _
-fv-set-prclosed fv (some pref) (S , def , step (inp {x = false}) tr) | out-tf , _ , refl , _ , pr =
+fv-set-prclosed fv (some _) (.nil , () , step (inp {x = true}) refl)      | out-f , _ , refl , _
+fv-set-prclosed fv (some _) (_ , _ , step (inp {x = true}) (step () _))   | out-f , _ , refl , _
+fv-set-prclosed fv (some pref) (S , def , step (inp {x = false}) tr)      | out-tf , _ , refl , _ , pr =
   let S' , def' , tr' = fv-set-prclosed (pr (Fin.suc Fin.zero)) pref (S , def , tr) in 
   S' , def' , step inp tr'
-fv-set-prclosed fv (some pref) (S , def , step (inp {x = true}) tr) | out-tf , _ , refl , _ , pr =
+fv-set-prclosed fv (some pref) (S , def , step (inp {x = true}) tr)       | out-tf , _ , refl , _ , pr =
   let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
   S' , def' , step inp tr'
+
+-- Schema: induction over trace ϕ
+fv-set-coherent : ∀{R} → (fv : FairViability R) → Coherent (fv-set fv)
+fv-set-coherent fv {[]} ht-I ht-O with fv .CoInd⟦_⟧.unfold
+fv-set-coherent fv {[]} (_ , _ , step () _) _ | inp , (_ , false) , refl , _
+fv-set-coherent fv {[]} (_ , _ , step () _) _ | inp , (_ , true) , refl , _
+fv-set-coherent fv {[]} (_ , _ , step () _) _ | out , _ , refl , _
+fv-set-coherent fv {[]} _ (_ , _ , step () _) | out-t , _ , refl , _
+fv-set-coherent fv {[]} _ (_ , _ , step () _) | out-f , _ , refl , _
+fv-set-coherent fv {[]} _ (_ , _ , step () _) | out-tf , _ , refl , _
+fv-set-coherent fv {_ ∷ ϕ} (_ , _ , step t tr-I) (_ , _ , step t' tr-O) with fv .CoInd⟦_⟧.unfold
+fv-set-coherent fv {O false ∷ ϕ} (_ , def , step (out _) tr-I) (_ , def' , step (out _) tr-O) | inp , (_ , false) , refl , _ , pr =
+  fv-set-coherent (pr Fin.zero) (_ , def , tr-I) (_ , def' , tr-O)
+fv-set-coherent fv {O true ∷ ϕ} (_ , def , step (out _) tr-I) (_ , def' , step (out _) tr-O)  | inp , (_ , true) , refl , _ , pr =
+  fv-set-coherent (pr Fin.zero) (_ , def , tr-I) (_ , def' , tr-O)
+fv-set-coherent fv {O _ ∷ []} (_ , _ , step (out _) (step () _)) _                            | out , _ , refl , _ 
+fv-set-coherent fv {O _ ∷ _ ∷ _} (_ , _ , step (out _) (step () _)) _                         | out , _ , refl , _
+fv-set-coherent fv {I false ∷ []} (_ , _ , step inp (step () _)) _                            | out-t , _ , refl , _
+fv-set-coherent fv {I false ∷ _ ∷ _} (_ , _ , step inp (step () _)) _                         | out-t , _ , refl , _
+fv-set-coherent fv {I true ∷ ϕ} (_ , def , step inp tr-I) (_ , def' , step inp tr-O)          | out-t , _ , refl , _ , pr = 
+  fv-set-coherent (pr Fin.zero) (_ , def , tr-I) (_ , def' , tr-O)
+fv-set-coherent fv {I false ∷ ϕ} (_ , def , step inp tr-I) (_ , def' , step inp tr-O)         | out-f , _ , refl , _ , pr = 
+  fv-set-coherent (pr Fin.zero) (_ , def , tr-I) (_ , def' , tr-O)
+fv-set-coherent fv {I true ∷ []} (_ , _ , step inp (step () _)) _                             | out-f , _ , refl , _
+fv-set-coherent fv {I true ∷ _ ∷ _} (_ , _ , step inp (step () _)) _                          | out-f , _ , refl , _
+fv-set-coherent fv {I false ∷ ϕ} (_ , def , step inp tr-I) (_ , def' , step inp tr-O)         | out-tf , _ , refl , _ , pr = 
+  fv-set-coherent (pr (Fin.suc Fin.zero)) (_ , def , tr-I) (_ , def' , tr-O)
+fv-set-coherent fv {I true ∷ ϕ} (_ , def , step inp tr-I) (_ , def' , step inp tr-O)          | out-tf , _ , refl , _ , pr = 
+  fv-set-coherent (pr Fin.zero) (_ , def , tr-I) (_ , def' , tr-O)
+
+fv-set-semantics : ∀{R} → (fv : FairViability R) → Semantics (fv-set fv)
+fv-set-semantics fv .closed = fv-set-prclosed fv
+fv-set-semantics fv .coherent = fv-set-coherent fv
+
 
 fv-sound : FairViability ⊆ FairViabilityS⊢
 fv-sound fv = get-service fv , FV->FC fv
