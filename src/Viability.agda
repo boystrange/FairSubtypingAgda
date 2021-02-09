@@ -180,7 +180,6 @@ get-service fv with fv .CoInd⟦_⟧.unfold
 ... | out-tf , _ , refl , _ , pr = 
   inp λ{true → (λ where .force → get-service (pr Fin.zero)) ; false → λ where .force → get-service (pr (Fin.suc Fin.zero))}
 
--- Cases on message needed for coaxiom in order to be recognized as input
 get-service' : ∀{R} → FairViabilityI R → SessionType
 get-service' (fold (inj₁ inp , (_ , false) , refl , _ , pr)) = 
   out λ{true → (λ where .force → nil) ; false → λ where .force → get-service' (pr Fin.zero)}
@@ -197,15 +196,6 @@ get-service' (fold (inj₂ out , (_ , false) , refl , _ , pr)) =
   inp λ{true → (λ where .force → nil); false → λ where .force → get-service' (pr Fin.zero)}
 get-service' (fold (inj₂ out , (_ , true) , refl , _ , pr)) = 
   inp λ{true → (λ where .force → get-service' (pr Fin.zero)) ; false → (λ where .force → nil)}
-
-open import is-lib.InfSys.SCoinduction
-open import is-lib.InfSys.FlexSCoinduction
-open import is-lib.InfSys.Equivalence
-open import Size
-open import Codata.Thunk
-
-SFV : U → Size → Set
-SFV = SFCoInd⟦ ViabilityIS , ViabilityCOIS ⟧
 
 FVI->Defined : ∀{R} → (fv : FairViabilityI R) → Defined (get-service' fv)
 FVI->Defined (fold (inj₁ inp , (_ , false) , refl , _)) = out
@@ -249,6 +239,15 @@ FV->MaySucceed (fold (inj₂ out , (_ , false) , refl , ok , pr)) =
 FV->MaySucceed (fold (inj₂ out , (_ , true) , refl , ok , pr)) = 
   let S' , red-S' , Succ = FV->MaySucceed (pr Fin.zero) in
   S' , sync (out ok) inp ◅ red-S' , Succ
+  
+open import is-lib.InfSys.SCoinduction
+open import is-lib.InfSys.FlexSCoinduction
+open import is-lib.InfSys.Equivalence
+open import Size
+open import Codata.Thunk
+
+SFV : U → Size → Set
+SFV = SFCoInd⟦ ViabilityIS , ViabilityCOIS ⟧
 
 get-⊢ᵢ : ∀{R} → (fv : FairViability R) → FairViabilityI R → R ⊢ᵢ get-service fv
 get-⊢ᵢ fv fvi with fv .CoInd⟦_⟧.unfold
@@ -287,8 +286,8 @@ CoInd⟦_⟧.unfold (FV->FC fv) with fv .CoInd⟦_⟧.unfold
 ... | out-t , _ , refl , ((ok-t , no-f) , ind) , pr = 
   let ind' = get-⊢ᵢ (cofold (out-t , _ , refl , ((ok-t , no-f) , ind) , pr)) ind in
   oi-true , _ , refl , ((ok-t , no-f) , ind') , λ{Fin.zero → FV->FC (pr Fin.zero)}
-... | out-f , _ , refl , ((no-t , ok-f) , _) , 
-  pr = oi-false , _ , refl , ((ok-f , no-t) , {!   !}) , λ{Fin.zero → FV->FC (pr Fin.zero)}
+... | out-f , _ , refl , ((no-t , ok-f) , _) , pr = 
+  oi-false , _ , refl , ((ok-f , no-t) , {!   !}) , λ{Fin.zero → FV->FC (pr Fin.zero)}
 ... | out-tf , _ , refl , ((ok-t , ok-f) , _) , pr = 
   oi-both , _ , refl , ((ok-t , ok-f) , {!   !}) , 
   λ{Fin.zero → FV->FC (pr Fin.zero) ; (Fin.suc Fin.zero) → FV->FC (pr (Fin.suc Fin.zero))}
@@ -309,6 +308,33 @@ get-⊢ fv (sync r _ ◅ _) | out , _ , refl , (e , _) , _ = ⊥-elim (win-reduc
 
 fv-set : ∀{R} → FairViability R → TraceSet
 fv-set fv = ⟦ get-service fv ⟧
+
+fv-set-prclosed : ∀{R} → (fv : FairViability R) → PrefixClosed (fv-set fv)
+fv-set-prclosed fv none _ = (get-service fv) , (FV->Defined fv , refl)
+fv-set-prclosed fv (some pref) (S , def , step t tr) with fv .CoInd⟦_⟧.unfold
+fv-set-prclosed fv (some pref) (S , def , step (out {x = false} !x) tr) | inp , (_ , false) , refl , _ , pr =
+  let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
+  S' , def' , step (out !x) tr'
+fv-set-prclosed fv (some pref) (S , def , step (out {x = true} !x) tr) | inp , (_ , true) , refl , _ , pr =
+  let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
+  S' , def' , step (out !x) tr'
+fv-set-prclosed fv (some none) (.nil , () , step (out !x) refl) | out , _ , refl , _
+fv-set-prclosed fv (some _) (.nil , () , step (inp {x = false}) refl) | out-t , _ , refl , _
+fv-set-prclosed fv (some _) (_ , _ , step (inp {x = false}) (step () _)) | out-t , _ , refl , _
+fv-set-prclosed fv (some pref) (S , def , step (inp {x = true}) tr) | out-t , _ , refl , _ , pr =
+  let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
+  S' , def' , step inp tr'
+fv-set-prclosed fv (some pref) (S , def , step (inp {x = false}) tr) | out-f , _ , refl , _ , pr =
+  let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
+  S' , def' , step inp tr'
+fv-set-prclosed fv (some _) (.nil , () , step (inp {x = true}) refl) | out-f , _ , refl , _
+fv-set-prclosed fv (some _) (_ , _ , step (inp {x = true}) (step () _)) | out-f , _ , refl , _
+fv-set-prclosed fv (some pref) (S , def , step (inp {x = false}) tr) | out-tf , _ , refl , _ , pr =
+  let S' , def' , tr' = fv-set-prclosed (pr (Fin.suc Fin.zero)) pref (S , def , tr) in 
+  S' , def' , step inp tr'
+fv-set-prclosed fv (some pref) (S , def , step (inp {x = true}) tr) | out-tf , _ , refl , _ , pr =
+  let S' , def' , tr' = fv-set-prclosed (pr Fin.zero) pref (S , def , tr) in 
+  S' , def' , step inp tr'
 
 fv-sound : FairViability ⊆ FairViabilityS⊢
 fv-sound fv = get-service fv , FV->FC fv
