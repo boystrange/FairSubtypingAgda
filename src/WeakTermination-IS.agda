@@ -28,8 +28,8 @@ open import Data.Unit using (⊤)
 open import Data.Bool renaming (Bool to 𝔹)
 open import Data.Product
 open import Data.Sum
-open import Data.List using ([]; _∷_; _++_)
-open import Data.List.Properties using (∷-injectiveʳ)
+open import Data.Vec using ([]; _∷_)
+open import Data.List as List
 import Data.Fin as Fin
 
 open import Relation.Nullary using (¬_; yes; no)
@@ -61,54 +61,54 @@ data RuleNames : Set where
 data CoRuleNames : Set where
   inp out : CoRuleNames
 
-nil-r : MetaRule U
-nil-r .C = ⊤
+nil-r : FinMetaRule U
+nil-r .Ctx = ⊤
 nil-r .comp _ =
   [] ,
   ----
-  nil , ⊤
+  nil
 
-inp-r : MetaRule U
-inp-r .C = Continuation
+inp-r : FinMetaRule U
+inp-r .Ctx = Continuation
 inp-r .comp f =
   f true .force ∷ f false .force ∷ [] ,
   ------------------------------------
-  inp f , ⊤
+  inp f
 
-out-r : MetaRule U
-out-r .C = Continuation
+out-r : FinMetaRule U
+out-r .Ctx = Continuation
 out-r .comp f =
   f true .force ∷ f false .force ∷ [] ,
   ------------------------------------
-  out f , ⊤
+  out f
 
-inp-co-r : MetaRule U
-inp-co-r .C = Continuation × 𝔹
-inp-co-r .comp (f , x) =
+inp-co-r : FinMetaRule U
+inp-co-r .Ctx = Σ[ (f , x) ∈ Continuation × 𝔹 ] x ∈ dom f
+inp-co-r .comp ((f , x) , _) =
   f x .force ∷ [] ,
   --------------------
-  inp f , (x ∈ dom f)
+  inp f
 
-out-co-r : MetaRule U
-out-co-r .C = Continuation × 𝔹
-out-co-r .comp (f , x) =
+out-co-r : FinMetaRule U
+out-co-r .Ctx = Σ[ (f , x) ∈ Continuation × 𝔹 ] x ∈ dom f
+out-co-r .comp ((f , x) , _) =
   f x .force ∷ [] ,
   --------------------
-  out f , (x ∈ dom f)
+  out f
 
 WeakTerminationS : SessionType -> Set
 WeakTerminationS T = ∀{φ} -> φ ∈ ⟦ T ⟧ -> ∃[ ψ ] (φ ++ ψ ∈ Maximal ⟦ T ⟧)
 
 WeakTerminationIS : IS U
 Names WeakTerminationIS = RuleNames
-rules WeakTerminationIS nil    = nil-r
-rules WeakTerminationIS inp    = inp-r
-rules WeakTerminationIS out    = out-r
+rules WeakTerminationIS nil    = from nil-r
+rules WeakTerminationIS inp    = from inp-r
+rules WeakTerminationIS out    = from out-r
 
 WeakTerminationCOIS : IS U
 WeakTerminationCOIS .Names = CoRuleNames
-WeakTerminationCOIS .rules inp = inp-co-r
-WeakTerminationCOIS .rules out = out-co-r
+WeakTerminationCOIS .rules inp = from inp-co-r
+WeakTerminationCOIS .rules out = from out-co-r
 
 WeakTermination : SessionType -> Set
 WeakTermination = FCoInd⟦ WeakTerminationIS , WeakTerminationCOIS ⟧
@@ -139,35 +139,35 @@ lemma-win nft nff = maximal (_ , out , refl)
     ; {O true ∷ ψ} none (_ , def , step (out ft) _) → ⊥-elim (nft ft) }
 
 may-terminate : ∀{T} -> Defined T -> WeakTerminationI T -> Satisfiable (Maximal ⟦ T ⟧)
-may-terminate () (fold (inj₁ nil , _ , refl , _ , _))
-may-terminate _ (fold (inj₁ inp , f , refl , _ , premise)) with true ∈? f | false ∈? f
+may-terminate () (fold (inj₁ nil , _ , refl , _))
+may-terminate _ (fold (inj₁ inp , f , refl , premise)) with true ∈? f | false ∈? f
 ... | yes ft | yes ff = let _ , cψ = may-terminate ft (premise Fin.zero) in _ , lemma-inp cψ
 ... | yes ft | no nff = let _ , cψ = may-terminate ft (premise Fin.zero) in _ , lemma-inp cψ
 ... | no nft | yes ff = let _ , cψ = may-terminate ff (premise (Fin.suc Fin.zero)) in _ , lemma-inp cψ
 ... | no nft | no nff = _ , lemma-end nft nff
-may-terminate _ (fold (inj₁ out , f , refl , _ , premise)) with true ∈? f | false ∈? f
+may-terminate _ (fold (inj₁ out , f , refl , premise)) with true ∈? f | false ∈? f
 ... | yes ft | yes ff = let _ , cψ = may-terminate ft (premise Fin.zero) in _ , lemma-out cψ
 ... | yes ft | no nff = let _ , cψ = may-terminate ft (premise Fin.zero) in _ , lemma-out cψ
 ... | no nft | yes ff = let _ , cψ = may-terminate ff (premise (Fin.suc Fin.zero)) in _ , lemma-out cψ
 ... | no nft | no nff = _ , lemma-win nft nff
-may-terminate _ (fold (inj₂ inp , C , refl , fx , premise)) with may-terminate fx (premise Fin.zero)
+may-terminate _ (fold (inj₂ inp , (C , fx) , refl , premise)) with may-terminate fx (premise Fin.zero)
 ... | _ , cψ = _ , lemma-inp cψ
-may-terminate _ (fold (inj₂ out , (_ , x) , refl , fx , premise)) with may-terminate fx (premise Fin.zero)
+may-terminate _ (fold (inj₂ out , ((_ , x) , fx) , refl , premise)) with may-terminate fx (premise Fin.zero)
 ... | _ , cψ = _ , lemma-out cψ
 
 wt-sound : WeakTermination ⊆ WeakTerminationS
 wt-sound wt (_ , def , refl) = may-terminate def (fcoind-to-ind wt)
 wt-sound wt (_ , def , step t tr) with wt .CoInd⟦_⟧.unfold
-wt-sound wt (_ , def , step (inp {_} {false}) tr) | inp , C , refl , sc , premise =
+wt-sound wt (_ , def , step (inp {_} {false}) tr) | inp , _ , refl , premise =
   let _ , cψ = wt-sound (premise (Fin.suc Fin.zero)) (_ , def , tr) in
   _ , lemma-inp cψ
-wt-sound wt (_ , def , step (inp {_} {true}) tr) | inp , C , refl , sc , premise =
+wt-sound wt (_ , def , step (inp {_} {true}) tr) | inp , _ , refl , premise =
   let _ , cψ = wt-sound (premise Fin.zero) (_ , def , tr) in
   _ , lemma-inp cψ
-wt-sound wt (_ , def , step (out {_} {false} fx) tr) | out , C , refl , sc , premise =
+wt-sound wt (_ , def , step (out {_} {false} fx) tr) | out , _ , refl , premise =
   let _ , cψ = wt-sound (premise (Fin.suc Fin.zero)) (_ , def , tr) in
   _ , lemma-out cψ
-wt-sound wt (_ , def , step (out {_} {true} fx) tr) | out , C , refl , sc , premise =
+wt-sound wt (_ , def , step (out {_} {true} fx) tr) | out , _ , refl , premise =
   let _ , cψ = wt-sound (premise Fin.zero) (_ , def , tr) in
   _ , lemma-out cψ
 
@@ -184,13 +184,13 @@ lemma-output-maximal {f} {x} spec tφ with x ∈? f
 ... | _ , cψ = _ , output-maximal cψ
 
 wt-consistent : WeakTerminationS ⊆ ISF[ WeakTerminationIS ] WeakTerminationS
-wt-consistent {nil} spec = nil , _ , refl , _ , λ ()
+wt-consistent {nil} spec = nil , _ , refl , λ ()
 wt-consistent {inp f} spec =
-  inp , f , refl , _ , λ { Fin.zero           → lemma-input-maximal spec
-                         ; (Fin.suc Fin.zero) → lemma-input-maximal spec }
+  inp , f , refl , λ { Fin.zero           → lemma-input-maximal spec
+                    ; (Fin.suc Fin.zero) → lemma-input-maximal spec }
 wt-consistent {out f} spec =
-  out , f , refl , _ , λ { Fin.zero           → lemma-output-maximal spec
-                         ; (Fin.suc Fin.zero) → lemma-output-maximal spec}
+  out , f , refl , λ { Fin.zero           → lemma-output-maximal spec
+                    ; (Fin.suc Fin.zero) → lemma-output-maximal spec}
 
 undefined->terminates : ∀{T} -> ¬ Defined T -> WeakTerminationI T
 undefined->terminates {nil}   _   = apply-ind (inj₁ nil) _ λ ()
@@ -217,12 +217,12 @@ bounded-lemma {out f} c[]@(maximal (_ , def , refl) F) =
   apply-ind (inj₁ out) _ λ{Fin.zero → output-maximal->terminates c[] ; (Fin.suc Fin.zero) → output-maximal->terminates c[]}
 bounded-lemma {nil} (maximal (_ , _ , step () _) _)
 bounded-lemma {inp f} cφ@(maximal (_ , def , step inp tr) F) =
-  apply-ind (inj₂ inp) (transitions+defined->defined tr def) λ{Fin.zero → bounded-lemma (input-maximal cφ)}
+  apply-ind (inj₂ inp) (_ , (transitions+defined->defined tr def)) λ{Fin.zero → bounded-lemma (input-maximal cφ)}
 bounded-lemma {out f} cφ@(maximal (_ , def , step (out fx) tr) F) =
-  apply-ind (inj₂ out) fx λ{Fin.zero → bounded-lemma (output-maximal cφ)}
+  apply-ind (inj₂ out) (_ , fx) λ{Fin.zero → bounded-lemma (output-maximal cφ)}
 
 wt-bounded : WeakTerminationS ⊆ WeakTerminationI
-wt-bounded {nil} spec = fold (inj₁ nil , _ , refl , _ , λ ())
+wt-bounded {nil} spec = fold (inj₁ nil , _ , refl , λ ())
 wt-bounded {inp f} spec with spec (_ , inp , refl)
 ... | _ , cψ = bounded-lemma cψ
 wt-bounded {out f} spec with spec (_ , out , refl)

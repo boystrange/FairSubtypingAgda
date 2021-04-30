@@ -1,40 +1,46 @@
+--------------------------------------------------------------------------------
+-- This is part of Agda Inference Systems 
+
 open import Agda.Builtin.Equality
 open import Data.Product
 open import Size
 open import Codata.Thunk
+open import Level
+open import Relation.Unary using (_⊆_)
 
-module is-lib.InfSys.Induction {l} where
+module is-lib.InfSys.Induction {𝓁} where
+
   private
     variable
-      U : Set l
+      U : Set 𝓁
 
-  open import is-lib.InfSys.Base {l}
+  open import is-lib.InfSys.Base {𝓁}
   open MetaRule
   open IS
 
-  -- Inductive Interpretation
+  {- Inductive Interpretation -}
 
-  data Ind⟦_⟧ (is : IS U) : U →  Set l where
-    fold : ∀ {u} →  ISF[ is ] Ind⟦ is ⟧ u → Ind⟦ is ⟧ u
+  data Ind⟦_⟧ {𝓁c 𝓁p 𝓁n : Level} (is : IS {𝓁c} {𝓁p} {𝓁n} U) : U →  Set (𝓁 ⊔ 𝓁c ⊔ 𝓁p ⊔ 𝓁n) where
+    fold : ∀{u} → ISF[ is ] Ind⟦ is ⟧ u → Ind⟦ is ⟧ u
 
-  -- Induction Principle
+  {- Induction Principle -}
 
-  ind[_] : (is : IS U) →
-           (S : U → Set l) →        -- specification
-           ISClosed is S →          -- S is closed
-           ∀ {u} → Ind⟦ is ⟧ u → S u
-  ind[ is ] S cl (fold (rn , c , refl , sd , pr)) = cl rn sd λ i → ind[ is ] S cl (pr i)
+  ind[_] : ∀{𝓁c 𝓁p 𝓁n 𝓁'} 
+      → (is : IS {𝓁c} {𝓁p} {𝓁n} U)  -- IS
+      → (S : U → Set 𝓁')            -- specification
+      → ISClosed is S               -- S is closed
+      → Ind⟦ is ⟧ ⊆ S
+  ind[ is ] S cl (fold (rn , c , refl , pr)) = cl rn c λ i → ind[ is ] S cl (pr i)
 
   {- Apply Rule -}
   
-  apply-ind : ∀{is : IS U} → (rn : is .Names) → RClosed (is .rules rn) Ind⟦ is ⟧
-  apply-ind {_} {is} rn = prefix⇒closed (is .rules rn) {Ind⟦ _ ⟧} λ{(c , refl , sd , prems) → fold (rn , c , refl , sd , prems)}
+  apply-ind : ∀{𝓁c 𝓁p 𝓁n}{is : IS {𝓁c} {𝓁p} {𝓁n} U} → (rn : is .Names) → RClosed (is .rules rn) Ind⟦ is ⟧
+  apply-ind {is = is} rn = prefix⇒closed (is .rules rn) {P = Ind⟦ _ ⟧} λ{(c , refl , pr) → fold (rn , c , refl , pr)}
 
-  {- Postfix -}
+  {- Postfix - Prefix -}
 
-  ind-postfix : ∀{is : IS U}{u} → Ind⟦ is ⟧ u → ISF[ is ] Ind⟦ is ⟧ u
+  ind-postfix : ∀{𝓁c 𝓁p 𝓁n}{is : IS {𝓁c} {𝓁p} {𝓁n} U} → Ind⟦ is ⟧ ⊆ ISF[ is ] Ind⟦ is ⟧
   ind-postfix (fold x) = x
 
-  {- Prefix -}
-  ind-prefix : ∀{is : IS U}{u} → ISF[ is ] Ind⟦ is ⟧ u → Ind⟦ is ⟧ u
+  ind-prefix : ∀{𝓁c 𝓁p 𝓁n}{is : IS {𝓁c} {𝓁p} {𝓁n} U} → ISF[ is ] Ind⟦ is ⟧ ⊆ Ind⟦ is ⟧
   ind-prefix x = fold x

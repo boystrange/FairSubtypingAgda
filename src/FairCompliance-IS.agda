@@ -26,7 +26,7 @@
 open import Data.Product
 open import Data.Empty
 open import Data.Sum
-open import Data.List
+open import Data.Vec
 open import Data.Fin
 open import Data.Bool renaming (Bool to 𝔹)
 open import Relation.Unary using (_∈_; _⊆_; _∉_)
@@ -58,83 +58,83 @@ module FairCompliance-IS where
   data FCompCOIS-RN : Set where
     co-oi co-io : FCompCOIS-RN
 
-  client-end-r : MetaRule U
-  client-end-r .C = SessionType × SessionType
-  client-end-r .comp (S , T) =
+  client-end-r : FinMetaRule U
+  client-end-r .Ctx = Σ[ (S , T) ∈ SessionType × SessionType ] Win S × Defined T
+  client-end-r .comp ((S , T) , _) =
     [] ,
     --------------------
-    (S , T) , (Win S × Defined T)
+    (S , T)
 
-  OI-true-r : MetaRule U
-  OI-true-r .C = Continuation × Continuation
-  OI-true-r .comp (f , g) =
+  OI-true-r : FinMetaRule U
+  OI-true-r .Ctx = Σ[ (f , _) ∈ Continuation × Continuation ] true ∈ dom f × false ∉ dom f
+  OI-true-r .comp ((f , g) , _) =
     (f true .force , g true .force) ∷ [] ,
     --------------------
-    (out f , inp g) , (true ∈ dom f × false ∉ dom f)
+    (out f , inp g)
 
-  OI-false-r : MetaRule U
-  OI-false-r .C = Continuation × Continuation
-  OI-false-r .comp (f , g) =
+  OI-false-r : FinMetaRule U
+  OI-false-r .Ctx = Σ[ (f , _) ∈ Continuation × Continuation ] false ∈ dom f × true ∉ dom f
+  OI-false-r .comp ((f , g) , _) =
     (f false .force , g false .force) ∷ [] ,
     --------------------
-    (out f , inp g) , (false ∈ dom f × true ∉ dom f)
+    (out f , inp g)
 
-  OI-both-r : MetaRule U
-  OI-both-r .C = Continuation × Continuation
-  OI-both-r .comp (f , g) =
+  OI-both-r : FinMetaRule U
+  OI-both-r .Ctx = Σ[ (f , _) ∈ Continuation × Continuation ] true ∈ dom f × false ∈ dom f
+  OI-both-r .comp ((f , g) , _) =
     (f true .force , g true .force) ∷ (f false .force , g false .force) ∷ [] ,
     --------------------
-    (out f , inp g) , (true ∈ dom f × false ∈ dom f)
+    (out f , inp g)
 
-  IO-true-r : MetaRule U
-  IO-true-r .C = Continuation × Continuation
-  IO-true-r .comp (f , g) =
+  IO-true-r : FinMetaRule U
+  IO-true-r .Ctx = Σ[ (_ , g) ∈ Continuation × Continuation ] true ∈ dom g × false ∉ dom g
+  IO-true-r .comp ((f , g) , _) =
     (f true .force , g true .force) ∷ [] ,
     --------------------
-    (inp f , out g) , (true ∈ dom g × false ∉ dom g)
+    (inp f , out g)
 
-  IO-false-r : MetaRule U
-  IO-false-r .C = Continuation × Continuation
-  IO-false-r .comp (f , g) =
+  IO-false-r : FinMetaRule U
+  IO-false-r .Ctx = Σ[ (_ , g) ∈ Continuation × Continuation ] false ∈ dom g × true ∉ dom g
+  IO-false-r .comp ((f , g) , _) =
     (f false .force , g false .force) ∷ [] ,
     --------------------
-    (inp f , out g) , (false ∈ dom g × true ∉ dom g)
+    (inp f , out g)
 
-  IO-both-r : MetaRule U
-  IO-both-r .C = Continuation × Continuation
-  IO-both-r .comp (f , g) =
+  IO-both-r : FinMetaRule U
+  IO-both-r .Ctx = Σ[ (_ , g) ∈ Continuation × Continuation ] true ∈ dom g × false ∈ dom g
+  IO-both-r .comp ((f , g) , _) =
     (f true .force , g true .force) ∷ (f false .force , g false .force) ∷ [] ,
     --------------------
-    (inp f , out g) , (true ∈ dom g × false ∈ dom g)
+    (inp f , out g)
 
-  co-IO-r : MetaRule U
-  co-IO-r .C = Continuation × Continuation × 𝔹
-  co-IO-r .comp (f , g , x) =
+  co-IO-r : FinMetaRule U
+  co-IO-r .Ctx = Σ[ (_ , g , x) ∈ Continuation × Continuation × 𝔹 ] dom g x
+  co-IO-r .comp ((f , g , x) , _) =
     (f x .force , g x .force) ∷ [] ,
     --------------------
-    (inp f , out g) , dom g x
+    (inp f , out g)
 
-  co-OI-r : MetaRule U
-  co-OI-r .C = Continuation × Continuation × 𝔹
-  co-OI-r .comp (f , g , x) =
+  co-OI-r : FinMetaRule U
+  co-OI-r .Ctx = Σ[ (f , _ , x) ∈ Continuation × Continuation × 𝔹 ] dom f x
+  co-OI-r .comp ((f , g , x) , _) =
     (f x .force , g x .force) ∷ [] ,
     --------------------
-    (out f , inp g) , dom f x
+    (out f , inp g)
 
   FCompIS : IS U
   FCompIS .Names = FCompIS-RN
-  FCompIS .rules client-end = client-end-r
-  FCompIS .rules oi-true = OI-true-r
-  FCompIS .rules oi-false = OI-false-r
-  FCompIS .rules oi-both = OI-both-r
-  FCompIS .rules io-true = IO-true-r
-  FCompIS .rules io-false = IO-false-r
-  FCompIS .rules io-both = IO-both-r
+  FCompIS .rules client-end = from client-end-r
+  FCompIS .rules oi-true = from OI-true-r
+  FCompIS .rules oi-false = from OI-false-r
+  FCompIS .rules oi-both = from OI-both-r
+  FCompIS .rules io-true = from IO-true-r
+  FCompIS .rules io-false = from IO-false-r
+  FCompIS .rules io-both = from IO-both-r
 
   FCompCOIS : IS U
   FCompCOIS .Names = FCompCOIS-RN
-  FCompCOIS .rules co-oi = co-OI-r
-  FCompCOIS .rules co-io = co-IO-r
+  FCompCOIS .rules co-oi = from co-OI-r
+  FCompCOIS .rules co-io = from co-IO-r
 
   _⊢_ : SessionType → SessionType → Set
   S ⊢ T = FCoInd⟦ FCompIS , FCompCOIS ⟧ (S , T)
@@ -146,32 +146,32 @@ module FairCompliance-IS where
 
   ¬nil-⊢ : ∀{S} → ¬ (nil ⊢ S)
   ¬nil-⊢ fc with fc .CoInd⟦_⟧.unfold
-  ... | client-end , _ , refl , ((() , _) , _) , _
+  ... | client-end , ((C , (() , _)) , _) , refl , _
 
   ⊢ᵢ-implies-succeed : ∀{S T} → S ⊢ᵢ T → MaySucceed (S # T)
-  ⊢ᵢ-implies-succeed (fold (inj₁ client-end , (S , T) , refl , (win , def) , _)) = (S # T) , ε , win#def win def
-  ⊢ᵢ-implies-succeed (fold (inj₁ oi-true , (f , g) , refl , (ok-t , _) , pr)) =
+  ⊢ᵢ-implies-succeed (fold (inj₁ client-end , ((S , T) , (win , def)) , refl , _)) = (S # T) , ε , win#def win def
+  ⊢ᵢ-implies-succeed (fold (inj₁ oi-true , (_ , (ok-t , _)) , refl , pr)) =
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync (out ok-t) inp ◅ red-Sys' , Succ
-  ⊢ᵢ-implies-succeed (fold (inj₁ oi-false , (f , g) , refl , (ok-f , _) , pr)) =
+  ⊢ᵢ-implies-succeed (fold (inj₁ oi-false , (_ , (ok-f , _)) , refl , pr)) =
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync (out ok-f) inp ◅ red-Sys' , Succ
-  ⊢ᵢ-implies-succeed (fold (inj₁ oi-both , (f , g) , refl , (ok-t , _) , pr)) =
+  ⊢ᵢ-implies-succeed (fold (inj₁ oi-both , (_ , (ok-t , _)) , refl , pr)) =
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync (out ok-t) inp ◅ red-Sys' , Succ
-  ⊢ᵢ-implies-succeed (fold (inj₁ io-true , (f , g) , refl , (ok-t , _) , pr)) =
+  ⊢ᵢ-implies-succeed (fold (inj₁ io-true , (_ , (ok-t , _)) , refl , pr)) =
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync inp (out ok-t) ◅ red-Sys' , Succ
-  ⊢ᵢ-implies-succeed (fold (inj₁ io-false , (f , g) , refl , (ok-f , _) , pr)) =
+  ⊢ᵢ-implies-succeed (fold (inj₁ io-false , (_ , (ok-f , _)) , refl , pr)) =
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync inp (out ok-f) ◅ red-Sys' , Succ
-  ⊢ᵢ-implies-succeed (fold (inj₁ io-both , (f , g) , refl , (ok-t , _) , pr)) =
+  ⊢ᵢ-implies-succeed (fold (inj₁ io-both , (_ , (ok-t , _)) , refl , pr)) =
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync inp (out ok-t) ◅ red-Sys' , Succ
-  ⊢ᵢ-implies-succeed (fold (inj₂ co-oi , (f , g , b) , refl , ok-b , pr)) =
+  ⊢ᵢ-implies-succeed (fold (inj₂ co-oi , (_ , ok-b) , refl , pr)) =
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync (out ok-b) inp ◅ red-Sys' , Succ
-  ⊢ᵢ-implies-succeed (fold (inj₂ co-io , (f , g , b) , refl , ok-b , pr)) =
+  ⊢ᵢ-implies-succeed (fold (inj₂ co-io , (_ , ok-b) , refl , pr)) =
     let Sys' , red-Sys' , Succ = ⊢ᵢ-implies-succeed (pr zero) in
     Sys' , sync inp (out ok-b) ◅ red-Sys' , Succ
 
@@ -180,30 +180,30 @@ module FairCompliance-IS where
   fc-sound : ∀{S T} → S ⊢ T → FairComplianceS (S # T)
   fc-sound fc ε = ⊢ᵢ-implies-succeed (fcoind-to-ind fc) 
   fc-sound fc (x ◅ red) with fc .CoInd⟦_⟧.unfold
-  fc-sound fc (x ◅ red) | client-end , _ , refl , ((win , def) , _) , _ = ⊥-elim (success-not-reduce (win#def win def) x)
-  fc-sound fc (sync (out ok-f) (inp {x = false}) ◅ red) | oi-true , _ , refl , ((_ , no-f) , _) , _ = ⊥-elim (no-f ok-f)
-  fc-sound fc (sync (out _) (inp {x = true}) ◅ red) | oi-true , _ , refl , ((_ , _) , _) , pr = fc-sound (pr zero) red
-  fc-sound fc (sync (out _) (inp {x = false}) ◅ red) | oi-false , _ , refl , ((_ , _) , _) , pr = fc-sound (pr zero) red
-  fc-sound fc (sync (out ok-t) (inp {x = true}) ◅ red) | oi-false , _ , refl , ((_ , no-t) , _) , _ = ⊥-elim (no-t ok-t)
-  fc-sound fc (sync (out _) (inp {x = false}) ◅ red) | oi-both , _ , refl , _ , pr = fc-sound (pr (suc zero)) red
-  fc-sound fc (sync (out _) (inp {x = true}) ◅ red) | oi-both , _ , refl , _ , pr = fc-sound (pr zero) red
-  fc-sound fc (sync (inp {x = false}) (out ok-f) ◅ red) | io-true , _ , refl , ((_ , no-f) , _) , _ = ⊥-elim (no-f ok-f)
-  fc-sound fc (sync (inp {x = true}) (out _) ◅ red) | io-true , _ , refl , ((_ , _) , _) , pr = fc-sound (pr zero) red
-  fc-sound fc (sync (inp {x = false}) (out _) ◅ red) | io-false , _ , refl , ((_ , _) , _) , pr = fc-sound (pr zero) red
-  fc-sound fc (sync (inp {x = true}) (out ok-t) ◅ red) | io-false , _ , refl , ((_ , no-t) , _) , _ = ⊥-elim (no-t ok-t)
-  fc-sound fc (sync (inp {x = false}) (out _) ◅ red) | io-both , _ , refl , _ , pr = fc-sound (pr (suc zero)) red
-  fc-sound fc (sync (inp {x = true}) (out _) ◅ red) | io-both , _ , refl , _ , pr = fc-sound (pr zero) red
+  fc-sound fc (x ◅ red) | client-end , ((_ , (win , def)) , _) , refl , _ = ⊥-elim (success-not-reduce (win#def win def) x)
+  fc-sound fc (sync (out ok-f) (inp {x = false}) ◅ red) | oi-true , ((_ , (_ , no-f)) , _) , refl , _ = ⊥-elim (no-f ok-f)
+  fc-sound fc (sync (out _) (inp {x = true}) ◅ red) | oi-true , _ , refl , pr = fc-sound (pr zero) red
+  fc-sound fc (sync (out _) (inp {x = false}) ◅ red) | oi-false , _ , refl , pr = fc-sound (pr zero) red
+  fc-sound fc (sync (out ok-t) (inp {x = true}) ◅ red) | oi-false , ((_ , (_ , no-t)) , _) , refl , _ = ⊥-elim (no-t ok-t)
+  fc-sound fc (sync (out _) (inp {x = false}) ◅ red) | oi-both , _ , refl , pr = fc-sound (pr (suc zero)) red
+  fc-sound fc (sync (out _) (inp {x = true}) ◅ red) | oi-both , _ , refl , pr = fc-sound (pr zero) red
+  fc-sound fc (sync (inp {x = false}) (out ok-f) ◅ red) | io-true , ((_ , (_ , no-f)) , _) , refl , _ = ⊥-elim (no-f ok-f)
+  fc-sound fc (sync (inp {x = true}) (out _) ◅ red) | io-true , _ , refl , pr = fc-sound (pr zero) red
+  fc-sound fc (sync (inp {x = false}) (out _) ◅ red) | io-false , _ , refl , pr = fc-sound (pr zero) red
+  fc-sound fc (sync (inp {x = true}) (out ok-t) ◅ red) | io-false , ((_ , (_ , no-t)) , _) , refl , _ = ⊥-elim (no-t ok-t)
+  fc-sound fc (sync (inp {x = false}) (out _) ◅ red) | io-both , _ , refl , pr = fc-sound (pr (suc zero)) red
+  fc-sound fc (sync (inp {x = true}) (out _) ◅ red) | io-both , _ , refl , pr = fc-sound (pr zero) red
 
   {- Boundedness -}
 
   maysucceed-implies-⊢ᵢ : ∀{S T Sys} → Reductions (S # T) Sys → Success Sys → S ⊢ᵢ T
-  maysucceed-implies-⊢ᵢ ε (win#def win def) = apply-ind (inj₁ client-end) (win , def) λ ()
+  maysucceed-implies-⊢ᵢ ε (win#def win def) = apply-ind (inj₁ client-end) (_ , (win , def)) λ ()
   maysucceed-implies-⊢ᵢ (sync (out ok) inp ◅ red) Succ =
     let rec = maysucceed-implies-⊢ᵢ red Succ in
-    apply-ind (inj₂ co-oi) ok λ{zero → rec}
+    apply-ind (inj₂ co-oi) (_ , ok) λ{zero → rec}
   maysucceed-implies-⊢ᵢ (sync inp (out ok) ◅ red) Succ =
     let rec = maysucceed-implies-⊢ᵢ red Succ in
-    apply-ind (inj₂ co-io) ok λ{zero → rec}
+    apply-ind (inj₂ co-io) (_ , ok) λ{zero → rec}
 
   fc-bounded : ∀{S T} → FairComplianceS (S # T) → S ⊢ᵢ T
   fc-bounded fc =
@@ -214,39 +214,39 @@ module FairCompliance-IS where
 
   fc-consistent : ∀{S T} → FairComplianceS (S # T) → ISF[ FCompIS ] (λ{(S , T) → FairComplianceS (S # T)}) (S , T)
   fc-consistent fc with fc ε
-  fc-consistent fc | .(_ # _) , ε , win#def win def = client-end , _ , refl , (win , def) , λ ()
+  fc-consistent fc | .(_ # _) , ε , win#def win def = client-end , (_ , (win , def)) , refl , λ ()
   fc-consistent {out f} fc | _ , sync (out ok-f) (inp {x = false}) ◅ _ , _ with true ∈? f
   fc-consistent {out f} fc | _ , sync (out ok-f) (inp {_} {false}) ◅ _ , _ | no no-t =
-    oi-false , _ , refl , (ok-f , no-t) , λ{zero → λ red → fc (sync (out ok-f) inp ◅ red)}
+    oi-false , (_ , (ok-f , no-t)) , refl , λ{zero → λ red → fc (sync (out ok-f) inp ◅ red)}
   fc-consistent {out f} fc | _ , sync (out ok-f) (inp {_} {false}) ◅ _ , _ | yes ok-t =
     let prems = λ{
               zero → λ red → fc (sync (out ok-t) inp ◅ red) ;
               (suc zero) → λ red → fc (sync (out ok-f) inp ◅ red)} in
-    oi-both , _ , refl , (ok-t , ok-f) , prems
+    oi-both , (_ , (ok-t , ok-f)) , refl , prems
   fc-consistent {out f} fc | _ , sync (out ok-t) (inp {x = true}) ◅ _ , _ with false ∈? f
   fc-consistent {out f} fc | _ , sync (out ok-t) (inp {_} {true}) ◅ _ , _ | no no-f =
-    oi-true , _ , refl , (ok-t , no-f) , λ{zero → λ red → fc (sync (out ok-t) inp ◅ red)}
+    oi-true , (_ , (ok-t , no-f)) , refl , λ{zero → λ red → fc (sync (out ok-t) inp ◅ red)}
   fc-consistent {out f} fc | _ , sync (out ok-t) (inp {_} {true}) ◅ _ , _ | yes ok-f =
     let prems = λ{
               zero → λ red → fc (sync (out ok-t) inp ◅ red) ;
               (suc zero) → λ red → fc (sync (out ok-f) inp ◅ red)} in
-    oi-both , _ , refl , (ok-t , ok-f) , prems
+    oi-both , (_ , (ok-t , ok-f)) , refl , prems
   fc-consistent {_} {out g} fc | _ , sync (inp {x = false}) (out ok-f) ◅ _ , _ with true ∈? g
   fc-consistent {_} {out g} fc | _ , sync (inp {x = false}) (out ok-f) ◅ _ , _ | no no-t =
-    io-false , _ , refl , (ok-f , no-t) , λ{zero → λ red → fc (sync inp (out ok-f) ◅ red)}
+    io-false , (_ , (ok-f , no-t)) , refl , λ{zero → λ red → fc (sync inp (out ok-f) ◅ red)}
   fc-consistent {_} {out g} fc | _ , sync (inp {x = false}) (out ok-f) ◅ _ , _ | yes ok-t =
     let prems = λ{
               zero → λ red → fc (sync inp (out ok-t) ◅ red) ;
               (suc zero) → λ red → fc (sync inp (out ok-f) ◅ red)} in
-    io-both , _ , refl , (ok-t , ok-f) , prems
+    io-both , (_ , (ok-t , ok-f)) , refl , prems
   fc-consistent {_} {out g} fc | _ , sync (inp {x = true}) (out ok-t) ◅ _ , _ with false ∈? g
   fc-consistent {_} {out g} fc | _ , sync (inp {x = true}) (out ok-t) ◅ _ , _ | no no-f =
-    io-true , _ , refl , (ok-t , no-f) , λ{zero → λ red → fc (sync inp (out ok-t) ◅ red)}
+    io-true , (_ , (ok-t , no-f)) , refl , λ{zero → λ red → fc (sync inp (out ok-t) ◅ red)}
   fc-consistent {_} {out g} fc | _ , sync (inp {x = true}) (out ok-t) ◅ _ , _ | yes ok-f =
     let prems = λ{
               zero → λ red → fc (sync inp (out ok-t) ◅ red) ;
               (suc zero) → λ red → fc (sync inp (out ok-f) ◅ red)} in
-    io-both , _ , refl , (ok-t , ok-f) , prems
+    io-both , (_ , (ok-t , ok-f)) , refl , prems
 
   {- Completeness -}
   

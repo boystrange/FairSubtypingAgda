@@ -1,45 +1,49 @@
+--------------------------------------------------------------------------------
+-- This is part of Agda Inference Systems 
+
 open import Agda.Builtin.Equality
 open import Data.Product
+open import Level
+open import Relation.Unary using (_⊆_)
 
-module is-lib.InfSys.Coinduction {l} where
+module is-lib.InfSys.Coinduction {𝓁} where
 
   private
     variable
-      U : Set l
+      U : Set 𝓁
   
-  open import is-lib.InfSys.Base {l}
-  open import is-lib.InfSys.Induction {l}
+  open import is-lib.InfSys.Base {𝓁}
+  open import is-lib.InfSys.Induction {𝓁}
   open MetaRule
   open IS
   
--- Coinductive interpretation
+  {- Coinductive interpretation -}
 
-  record CoInd⟦_⟧ (is : IS U) (u : U) : Set l where
+  record CoInd⟦_⟧ {𝓁c 𝓁p 𝓁n : Level} (is : IS {𝓁c} {𝓁p} {𝓁n} U) (u : U) : Set (𝓁 ⊔ 𝓁c ⊔ 𝓁p ⊔ 𝓁n) where
     coinductive
     constructor cofold_
     field
       unfold : ISF[ is ] CoInd⟦ is ⟧ u
 
--- Coinduction Principle
+  {- Coinduction Principle -}
 
-  coind[_] : (is : IS U) →
-            (S : U → Set l) →              -- specification
-            (∀ {u} → S u → ISF[ is ] S u) →   -- S is consistent
-            ∀ {u}  → S u → CoInd⟦ is ⟧ u
+  coind[_] : ∀{𝓁c 𝓁p 𝓁n 𝓁'}
+      → (is : IS {𝓁c} {𝓁p} {𝓁n} U) 
+      → (S : U → Set 𝓁')
+      → (S ⊆ ISF[ is ] S)   -- S is consistent
+      → S ⊆ CoInd⟦ is ⟧
   CoInd⟦_⟧.unfold (coind[ is ] S cn Su) with cn Su
-  ... | rn , c , refl , sd , pr = rn , c , refl , sd , λ i → coind[ is ] S cn (pr i)
+  ... | rn , c , refl , pr = rn , c , refl , λ i → coind[ is ] S cn (pr i)
 
   {- Apply Rule -}
 
-  apply-coind : ∀{is : IS U} → (rn : is .Names) → RClosed (is .rules rn) CoInd⟦ is ⟧
-  apply-coind {_} {is} rn = prefix⇒closed (is .rules rn) {CoInd⟦ _ ⟧} λ{(c , refl , sd , prems) → cofold (rn , c , refl , sd , prems)}
+  apply-coind : ∀{𝓁c 𝓁p 𝓁n}{is : IS {𝓁c} {𝓁p} {𝓁n} U} → (rn : is .Names) → RClosed (is .rules rn) CoInd⟦ is ⟧
+  apply-coind {is = is} rn = prefix⇒closed (is .rules rn) {P = CoInd⟦ _ ⟧} λ{(c , refl , pr) → cofold (rn , c , refl , pr)}
 
-  {- Postfix -}
+  {- Postfix - Prefix -}
 
-  coind-postfix : ∀{is : IS U}{u} → CoInd⟦ is ⟧ u → ISF[ is ] CoInd⟦ is ⟧ u
-  coind-postfix coind = coind .CoInd⟦_⟧.unfold
-
-  {- Prefix -}
+  coind-postfix : ∀{𝓁c 𝓁p 𝓁n}{is : IS {𝓁c} {𝓁p} {𝓁n} U} → CoInd⟦ is ⟧ ⊆ ISF[ is ] CoInd⟦ is ⟧
+  coind-postfix x = x .CoInd⟦_⟧.unfold
   
-  coind-prefix : ∀{is : IS U}{u} → ISF[ is ] CoInd⟦ is ⟧ u → CoInd⟦ is ⟧ u
+  coind-prefix : ∀{𝓁c 𝓁p 𝓁n}{is : IS {𝓁c} {𝓁p} {𝓁n} U} → ISF[ is ] CoInd⟦ is ⟧ ⊆ CoInd⟦ is ⟧
   coind-prefix x = cofold x

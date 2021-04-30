@@ -1,88 +1,77 @@
+--------------------------------------------------------------------------------
+-- This is part of Agda Inference Systems 
+
 open import Agda.Builtin.Equality
 open import Data.Product
 open import Data.Sum
-open import Data.Empty
+open import Data.Vec using (Vec; fromList; length) renaming (lookup to get)
 open import Data.Fin using (Fin)
-open import Data.Vec using (Vec; fromList) renaming (lookup to get)
-open import Data.List using (List ; length ; lookup)
-open import Data.Unit
-open import Level using (Lift) renaming (suc to _++)
-open import Size
-open import Codata.Thunk
+open import Level
+open import Relation.Unary using (_⊆_)
 
-module is-lib.InfSys.Base {l} where
+module is-lib.InfSys.Base {𝓁} where
 
-  record MetaRule (U : Set l) : Set (l ++) where
-    constructor rule
+  record MetaRule {𝓁c 𝓁p : Level} (U : Set 𝓁) : Set (𝓁 ⊔ suc 𝓁c ⊔ suc 𝓁p) where 
+    field 
+      Ctx : Set 𝓁c
+      Pos : Set 𝓁p 
+      prems : Ctx → Pos → U
+      conclu : Ctx → U 
+
+    addSideCond : ∀{𝓁'} → (U → Set 𝓁') → MetaRule {𝓁c ⊔ 𝓁'} U
+    (addSideCond P) .Ctx = Σ[ c ∈ Ctx ] P (conclu c)
+    (addSideCond P) .Pos = Pos
+    (addSideCond P) .prems (c , _) p = prems c p
+    (addSideCond P) .conclu (c , _) = conclu c
+
+    RF[_] : ∀{𝓁'} → (U → Set 𝓁') → (U → Set _)
+    RF[_] P u = Σ[ c ∈ Ctx ] (u ≡ conclu c × (∀ p → P (prems c p)))
+
+    RClosed : ∀{𝓁'} → (U → Set 𝓁') → Set _
+    RClosed P = ∀ c → (∀ p → P (prems c p)) → P (conclu c)
+
+  {- Finitary Rule -}
+
+  record FinMetaRule {𝓁c n} (U : Set 𝓁) : Set (𝓁 ⊔ suc 𝓁c) where
     field
-      C : Set l
-      comp : C → List U × U × Set l
+      Ctx : Set 𝓁c
+      comp : Ctx → Vec U n × U
 
-    prems : C → List U
-    prems c = proj₁ (comp c)
+    from : MetaRule {𝓁c} {zero} U
+    from .MetaRule.Ctx = Ctx
+    from .MetaRule.Pos = Fin n
+    from .MetaRule.prems c n = get (proj₁ (comp c)) n
+    from .MetaRule.conclu c = proj₂ (comp c)
 
-    conclu : C → U
-    conclu c = proj₁ (proj₂ (comp c))
-
-    side : C → Set l
-    side c = proj₂ (proj₂ (comp c))
-
-    addSideCond : (U → Set l) → MetaRule U
-    (addSideCond P) .C = C
-    (addSideCond P) .comp c = prems c , conclu c , ((side c) × P (conclu c))
-
-    get-prem : (c : C) → (i : Fin (length (prems c))) → U
-    get-prem c i = lookup (prems c) i
-
-    RF[_] : (U → Set l) → (U → Set l)
-    RF[_] J u = Σ[ c ∈ C ] (u ≡ conclu c) × (side c) × (∀ i → J (get-prem c i))
-
-    RClosed : (U → Set l) → Set l
-    RClosed J = ∀ {c} → side c → (∀ i → J (get-prem c i)) → J (conclu c)
-    
   open MetaRule
 
-  record NoSide : Set l where
-    constructor <>
-
-  record IS (U : Set l) : Set (l ++) where
+  record IS {𝓁c 𝓁p 𝓁n : Level} (U : Set 𝓁) : Set (𝓁 ⊔ suc 𝓁c ⊔ suc 𝓁p ⊔ suc 𝓁n) where
     field
-      Names : Set            -- rule names
-      rules : Names → MetaRule U   -- rules
+      Names : Set 𝓁n            
+      rules : Names → MetaRule {𝓁c} {𝓁p} U 
 
-    ISF[_] : (U → Set l) → (U → Set l)
-    ISF[_] J u = Σ[ rn ∈ Names ] RF[ rules rn ] J u
+    ISF[_] : ∀{𝓁'} → (U → Set 𝓁') → (U → Set _)
+    ISF[_] P u = Σ[ rn ∈ Names ] RF[ rules rn ] P u
 
-    ISClosed : (U → Set l) → Set l
-    ISClosed J = ∀ rn → RClosed (rules rn) J
-    --to do: ISClosed is S  equivalente ∀ u → ⟦ is ⟧ S u → S u
+    ISClosed : ∀{𝓁'} → (U → Set 𝓁') → Set _
+    ISClosed P = ∀ rn → RClosed (rules rn) P
+
   open IS
 
-  ISfromPred : {U : Set l} → (U → Set l) → IS U
-  ISfromPred {U} P .Names = ⊤
-  ISfromPred {U} P .rules rn .C = U
-  ISfromPred {U} P .rules rn .comp u = List.[] , u , P u
-
-  private
-    variable
-      U : Set l
-
-  -- union
-  _∪_ : IS U → IS U → IS U
+  _∪_ : ∀{𝓁c 𝓁p 𝓁n 𝓁n'}{U : Set 𝓁} → IS {𝓁c} {𝓁p} {𝓁n} U → IS {_} {_} {𝓁n'} U → IS {_} {_} {𝓁n ⊔ 𝓁n'} U
   (is1 ∪ is2) .Names = (is1 .Names) ⊎ (is2 .Names)
   (is1 ∪ is2) .rules = [ is1 .rules , is2 .rules ]
 
-  -- restriction
-  _⊓_ : IS U → (U → Set l) → IS U
+  _⊓_ : ∀{𝓁c 𝓁p 𝓁n 𝓁'}{U : Set 𝓁} → IS {𝓁c} {𝓁p} {𝓁n} U → (U → Set 𝓁') → IS {𝓁c ⊔ 𝓁'} {_} {_} U
   (is ⊓ P) .Names = is .Names
   (is ⊓ P) .rules rn = addSideCond (is .rules rn) P
 
   {- Properties -}
-  
+
   -- closed implies prefix
-  closed⇒prefix : (m : MetaRule U) → ∀{J u} → RClosed m J → RF[ m ] J u → J u
-  closed⇒prefix _ cl (c , refl , sd , pr) = cl sd pr
+  closed⇒prefix : ∀{𝓁c 𝓁p}{U : Set 𝓁} → (m : MetaRule {𝓁c} {𝓁p} U) → ∀{𝓁'}{P : U → Set 𝓁'} → RClosed m {𝓁'} P → RF[ m ] P ⊆ P
+  closed⇒prefix _ cl (_ , refl , pr) = cl _ pr
 
   -- prefix implies closed
-  prefix⇒closed : (m : MetaRule U) → ∀{J} → (∀{u} → RF[ m ] J u → J u) → RClosed m J
-  prefix⇒closed _ f = λ sd prems → f (_ , refl , sd , prems)
+  prefix⇒closed : ∀{𝓁c 𝓁p}{U : Set 𝓁} → (m : MetaRule {𝓁c} {𝓁p} U) → ∀{𝓁'}{P : U → Set 𝓁'} → (RF[ m ] P ⊆ P) → RClosed m {𝓁'} P
+  prefix⇒closed _ prf c pr = prf (c , refl , pr)
