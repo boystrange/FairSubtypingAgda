@@ -3,7 +3,7 @@
 This Agda library formalizes the following predicates and relations
 on **dependent session types**:
 
-* **weak termination** of a session type T, namely the property that
+* **fair termination** of a session type T, namely the property that
   it is always possible to terminate the protocol T no matter how
   long it has been carried out;
 * **fair compliance** of a session type R with respect to a session

@@ -39,6 +39,6 @@ import Subtyping
 import TraceInclusion
 import Convergence
 import Divergence
-import WeakTermination-IS
+import FairTermination-IS
 import FairCompliance-IS
 import FairSubtyping-IS

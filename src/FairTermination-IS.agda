@@ -43,7 +43,7 @@ open import Common
 
 open import is-lib.InfSys
 
-module WeakTermination-IS {𝕋 : Set} (message : Message 𝕋) where
+module FairTermination-IS {𝕋 : Set} (message : Message 𝕋) where
 
   open import SessionType message
   open import Trace message
