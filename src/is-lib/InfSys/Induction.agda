@@ -3,8 +3,6 @@
 
 open import Agda.Builtin.Equality
 open import Data.Product
-open import Size
-open import Codata.Thunk
 open import Level
 open import Relation.Unary using (_⊆_)
 

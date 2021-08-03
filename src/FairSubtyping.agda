@@ -23,6 +23,8 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+{-# OPTIONS --guardedness --sized-types #-}
+
 open import Size
 
 open import Data.Empty

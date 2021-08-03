@@ -23,6 +23,8 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+{-# OPTIONS --guardedness --sized-types #-}
+
 module Main where
 
 import Trace

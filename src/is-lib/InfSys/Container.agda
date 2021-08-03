@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 -- This is part of Agda Inference Systems
 
+{-# OPTIONS --sized-types --guardedness #-}
+
 open import Agda.Builtin.Equality
 open import Data.Product
 open import Data.Sum
@@ -93,7 +95,7 @@ module is-lib.InfSys.Container {𝓁}(U : Set 𝓁) where
 
         C[_] : ∀{𝓁c 𝓁n} → IS {𝓁c} {𝓁p} {𝓁n} U → ISCont {𝓁 ⊔ 𝓁c ⊔ 𝓁n}
         C[ is ] .Command u = Σ[ rn ∈ is .Names ] Σ[ c ∈ is .rules rn .Ctx ] u ≡ is .rules rn .conclu c
-        C[ is ] .Response (rn , _ , refl) = is .rules rn .Pos
+        C[ is ] .Response (rn , c , refl) = is .rules rn .Pos c
         C[ is ] .next (rn , c , refl) r = is .rules rn .prems c r
 
         {- Every EndoContainer is an IS -}
@@ -103,7 +105,7 @@ module is-lib.InfSys.Container {𝓁}(U : Set 𝓁) where
         IS[ C ] .rules (u , c) = 
             record { 
                 Ctx = ⊤ ; 
-                Pos = C .Response c ; 
+                Pos = λ _ → C .Response c ; 
                 prems = λ _ r → C .next c r ; 
                 conclu = λ _ → u }
 

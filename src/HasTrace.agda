@@ -23,11 +23,14 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+{-# OPTIONS --guardedness #-}
+
 open import Data.Empty
 open import Data.Product
 open import Data.List using ([]; _∷_; _∷ʳ_; _++_)
 
 open import Relation.Nullary
+open import Relation.Unary using (_∈_; _⊆_;_∉_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 import Relation.Binary.HeterogeneousEquality as Het
 
@@ -149,3 +152,29 @@ has-trace-double-negation : ∀{T φ} -> ¬ ¬ T HasTrace φ -> T HasTrace φ
 has-trace-double-negation {T} {φ} p with T HasTrace? φ
 ... | yes tφ = tφ
 ... | no ntφ = ⊥-elim (p ntφ)
+
+{- New -}
+not-nil-has-trace : ∀{ϕ} → ¬ (nil HasTrace ϕ)
+not-nil-has-trace (.(inp _) , inp , step () _)
+not-nil-has-trace (.(out _) , out , step () _)
+
+trace-after-in : ∀{f x ϕ} → (inp f) HasTrace (I x ∷ ϕ) → (f x .force) HasTrace ϕ
+trace-after-in (_ , def , step inp red) = _ , def , red
+
+trace-after-out : ∀{f x ϕ} → (out f) HasTrace (O x ∷ ϕ) → (f x .force) HasTrace ϕ
+trace-after-out (_ , def , step (out _) red) = _ , def , red
+
+inp-hastrace->defined : ∀{f x tr} → (inp f) HasTrace (I x ∷ tr) → x ∈ dom f
+inp-hastrace->defined (_ , def , step inp refl) = def
+inp-hastrace->defined (_ , def , step inp (step red _)) = transition->defined red
+
+empty-inp-has-empty-trace : ∀{f ϕ} → EmptyContinuation f → (inp f) HasTrace ϕ → ϕ ≡ []
+empty-inp-has-empty-trace e (_ , _ , refl) = refl
+empty-inp-has-empty-trace {f} e (_ , _ , step (inp {x = x}) reds) with Defined? (f x .force)
+empty-inp-has-empty-trace {f} e (_ , def , step (inp {x = _}) refl) | no ¬def = ⊥-elim (¬def def)
+empty-inp-has-empty-trace {f} e (_ , _ , step (inp {x = _}) (step t _)) | no ¬def = ⊥-elim (¬def (transition->defined t))
+... | yes def = ⊥-elim (e _ def)
+
+empty-out-has-empty-trace : ∀{f ϕ} → EmptyContinuation f → (out f) HasTrace ϕ → ϕ ≡ []
+empty-out-has-empty-trace e (_ , _ , refl) = refl
+empty-out-has-empty-trace e (_ , _ , step (out def) _) = ⊥-elim (e _ def)

@@ -23,6 +23,8 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+{-# OPTIONS --guardedness --sized-types #-}
+
 open import Data.Empty
 open import Data.Product
 open import Data.Sum
@@ -188,9 +190,9 @@ discriminator-after-sync->defined {R} {T} {S} sub rdef rr tr with Defined? R
 ... | ncψ with decode-sub (co-semantics (disc-set->semantics T S)) rψ
 ... | dsψ with contraposition (disc-set-maximal-1 dsψ) (contraposition co-trace->co-set ncψ)
 ... | nnsψ with has-trace-double-negation nnsψ
-... | sψ with let tr' = subst (λ z -> Transitions _ z _) (co-trace-swap eq) tr in
+... | sψ with (let tr' = subst (λ z -> Transitions _ z _) (co-trace-swap eq) tr in
               let tr'' = subst (λ z -> Transitions _ z _) (co-trace-++ ψ (I x ∷ [])) tr' in
-              ends-with-output->has-trace tr''
+              ends-with-output->has-trace tr'')
 ... | tψ with disc-set-has-outputs sub dsψ tψ sψ
 ... | dsφ with decode-sup (co-semantics (disc-set->semantics T S)) (co-definition {DiscSet T S} dsφ)
 ... | rφ = let rφ' = subst (_ HasTrace_) (co-trace-++ (co-trace ψ) (O x ∷ [])) rφ in

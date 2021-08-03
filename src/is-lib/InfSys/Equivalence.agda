@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 -- This is part of Agda Inference Systems 
 
+{-# OPTIONS --sized-types --guardedness #-}
+
 open import Agda.Builtin.Equality
 open import Data.Product
 open import Data.Sum

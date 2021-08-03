@@ -23,17 +23,21 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+{-# OPTIONS --guardedness #-}
+
 open import Level
 
 open import Data.Empty
 open import Data.Unit
 open import Data.Product
 open import Data.Sum
+open import Data.Bool
 open import Data.List using (List)
 
 open import Relation.Nullary
+open import Relation.Nullary.Decidable
 open import Relation.Unary using (Pred; _∈_; _⊆_; Empty; Satisfiable)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl ; subst ; cong)
 
 open import Common
 
@@ -114,3 +118,38 @@ not-def->nil : ∀{T} → ¬ (Defined T) → T ≡ nil
 not-def->nil {nil} nd = refl
 not-def->nil {inp f} nd = ⊥-elim (nd inp)
 not-def->nil {out f} nd = ⊥-elim (nd out)
+
+not-nil-defined : Defined nil → ⊥
+not-nil-defined ()
+
+open Message message
+
+if-≡-ch : (x y : ℙ) → SessionType → SessionType → SessionType
+if-≡-ch x y S T with x ?= y
+... | no ¬p = T
+... | yes refl = S
+
+sample-cont : ℙ → SessionType → SessionType → Continuation
+force (sample-cont t S T x) = if-≡-ch x t S T
+
+cont-not-def : ∀{t} → ¬ (Defined (sample-cont t nil win t .force))
+cont-not-def {t} ok with t ?= t
+cont-not-def {t} () | yes refl
+... | no ¬eq = ⊥-elim (¬eq refl)
+
+force-eq : ∀{t S T} → S ≡ (sample-cont t S T) t .force
+force-eq {t} with t ?= t
+... | no ¬p = ⊥-elim (¬p refl)
+... | yes refl = refl
+
+wit-cont : ∀{t S T} → Defined S → Witness (sample-cont t S T)
+wit-cont {t} def = t , subst Defined force-eq def
+
+sample-in : (t : ℙ) → SessionType → SessionType
+sample-in t S = inp (sample-cont t S nil)
+
+sample-out : (t : ℙ) → SessionType → SessionType
+sample-out t S = out (sample-cont t S nil)
+
+full-cont : SessionType → Continuation
+force (full-cont S _) = S

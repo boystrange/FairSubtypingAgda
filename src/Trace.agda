@@ -23,6 +23,8 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+{-# OPTIONS --guardedness #-}
+
 open import Data.Product
 open import Data.List using (List; []; _∷_; _∷ʳ_; _++_)
 open import Data.List.Properties using (∷-injective)

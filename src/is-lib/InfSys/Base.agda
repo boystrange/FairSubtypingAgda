@@ -14,13 +14,13 @@ module is-lib.InfSys.Base {𝓁} where
   record MetaRule {𝓁c 𝓁p : Level} (U : Set 𝓁) : Set (𝓁 ⊔ suc 𝓁c ⊔ suc 𝓁p) where 
     field 
       Ctx : Set 𝓁c
-      Pos : Set 𝓁p 
-      prems : Ctx → Pos → U
+      Pos : Ctx → Set 𝓁p 
+      prems : (c : Ctx) → Pos c → U
       conclu : Ctx → U 
 
     addSideCond : ∀{𝓁'} → (U → Set 𝓁') → MetaRule {𝓁c ⊔ 𝓁'} U
     (addSideCond P) .Ctx = Σ[ c ∈ Ctx ] P (conclu c)
-    (addSideCond P) .Pos = Pos
+    (addSideCond P) .Pos (c , _) = Pos c
     (addSideCond P) .prems (c , _) p = prems c p
     (addSideCond P) .conclu (c , _) = conclu c
 
@@ -39,7 +39,7 @@ module is-lib.InfSys.Base {𝓁} where
 
     from : MetaRule {𝓁c} {zero} U
     from .MetaRule.Ctx = Ctx
-    from .MetaRule.Pos = Fin n
+    from .MetaRule.Pos = λ _ → Fin n
     from .MetaRule.prems c n = get (proj₁ (comp c)) n
     from .MetaRule.conclu c = proj₂ (comp c)
 

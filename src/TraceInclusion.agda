@@ -23,6 +23,8 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
+{-# OPTIONS --guardedness #-}
+
 open import Data.Empty
 open import Data.Product
 open import Data.List using ([]; _∷_; _++_)
@@ -40,7 +42,6 @@ open import Trace message
 open import SessionType message
 open import Transitions message
 open import Session message
-open import Subtyping message
 open import HasTrace message
 open import TraceSet message
 
